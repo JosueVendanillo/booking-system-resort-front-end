@@ -1,0 +1,19 @@
+// src/utils/auth.js
+
+const USER_KEY = "user";
+
+// Save user to localStorage
+export const setUser = (user) => {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+};
+
+// Get user from localStorage
+export const getUser = () => {
+  const user = localStorage.getItem(USER_KEY);
+  return user ? JSON.parse(user) : null;
+};
+
+// Remove user (logout)
+export const clearUser = () => {
+  localStorage.removeItem(USER_KEY);
+};
