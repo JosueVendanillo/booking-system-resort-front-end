@@ -15,6 +15,57 @@ import {
 } from "react-icons/fa"
 
 function Homepage() {
+
+
+      // State to hold form inputs
+  const [booking, setBooking] = useState({
+    fullname: "",
+    email: "",
+    contactNumber: "",
+    checkin: "",
+    checkout: "",
+    adults: "",
+    kids: "",
+    roomType: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setBooking((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccess("");
+    setError("");
+
+    try {
+      const response = await axios.post("http://localhost:8080/api/bookings", booking);
+      setSuccess("Booking successful!");
+      setBooking({
+        fullname: "",
+        email: "",
+        contactNumber: "",
+        checkin: "",
+        checkout: "",
+        adults: "",
+        kids: "",
+        roomType: "",
+      });
+    } catch (err) {
+      setError("Failed to submit booking. Please try again.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
     
 
     return (
@@ -298,12 +349,14 @@ function Homepage() {
                             <div className="card shadow-lg">
                                 <div className="card-body p-4">
                                     <h3 className="h4 fw-semibold mb-4 text-primary">Reserve Your Stay</h3>
-                                    <form className="row g-3">
+                                    <form className="row g-3" onSubmit={handleSubmit}>
                                         <div className="col-12">
                                             <label htmlFor="checkin" className="form-label fw-medium">Fullname</label>
                                             <input
                                                 type="text"
                                                 className="form-control"
+                                                value={booking.fullname}
+                                                onChange={handleChange}
                                                 required
                                             />
                                         </div>
@@ -313,6 +366,8 @@ function Homepage() {
                                             <input
                                                 type="email"
                                                 className="form-control"
+                                                value={booking.email}
+                                                onChange={handleChange}
                                                 required
                                             />
                                         </div>
@@ -322,6 +377,8 @@ function Homepage() {
                                             <input
                                                 type="text"
                                                 className="form-control"
+                                                value={booking.contactNumber}
+                                                onChange={handleChange}
                                                 required
                                             />
                                         </div>
@@ -332,6 +389,8 @@ function Homepage() {
                                                 type="date"
                                                 className="form-control"
                                                 id="checkin"
+                                                value={booking.checkin}
+                                                onChange={handleChange}
                                                 required
                                             />
                                         </div>
@@ -341,12 +400,15 @@ function Homepage() {
                                                 type="date"
                                                 className="form-control"
                                                 id="checkout"
+                                                value={booking.checkout}
+                                                onChange={handleChange}
                                                 required
                                             />
                                         </div>
                                         <div className="col-md-6">
                                             <label htmlFor="guests" className="form-label fw-medium">Adult</label>
-                                            <select className="form-select" id="guests" required>
+                                            <select className="form-select" id="guests"  name="adults" value={booking.adults}
+                                                onChange={handleChange} required>
                                                 <option value="" disabled selected>Select Adult</option>
                                                 <option value="1">1 Adult</option>
                                                 <option value="2">2 Adults</option>
@@ -356,7 +418,8 @@ function Homepage() {
                                             </div>
                                         <div className="col-md-6">
                                             <label htmlFor="guests" className="form-label fw-medium">Kids</label>
-                                            <select className="form-select" id="guests">
+                                            <select className="form-select" id="guests" name="kids" value={booking.kids}
+                                                                onChange={handleChange}>
                                                 <option value="" disabled selected>Select Kids</option>
                                                 <option value="1">1 Kid</option>
                                                 <option value="2">2 Kids</option>
@@ -366,7 +429,8 @@ function Homepage() {
                                         </div>
                                         <div className="col-md-6">
                                             <label htmlFor="room" className="form-label fw-medium">Room Type</label>
-                                            <select className="form-select" id="room" required>
+                                            <select className="form-select" id="room" value={booking.roomType}
+          onChange={handleChange} required>
                                                 <option value="" disabled selected>Select Room</option>
                                                 <option value="standard">KTV Room</option>
                                                 <option value="deluxe">Big Cabana</option>

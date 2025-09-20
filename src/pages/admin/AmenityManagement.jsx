@@ -1,18 +1,12 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import AmenityFormModal from '../../components/FormModal/AmenityFormModal'
+import axios from 'axios';
+
+const API_URL = "http://localhost:8080/api/amenities"
 
 function AmenityManagement() {
-  const [amenities, setAmenities] = useState([
-    { id: 1, name: 'Deluxe Room', description: 'Spacious room with luxury features.' },
-    { id: 2, name: 'Swimming Pool', description: 'Outdoor infinity pool with ocean view.' },
-    { id: 3, name: 'Fitness Center', description: 'Fully equipped gym with trainer.' },
-    { id: 4, name: 'Spa', description: 'Relaxing massage and wellness services.' },
-    { id: 5, name: 'Restaurant', description: 'Fine dining with international cuisine.' },
-    { id: 6, name: 'Free WiFi', description: 'High-speed internet access everywhere.' },
-    { id: 7, name: 'Parking', description: 'Secure underground parking for guests.' },
-    { id: 8, name: 'Bar', description: 'Cocktail lounge with ocean view.' }
-  ])
+  const [amenities, setAmenities] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [editAmenity, setEditAmenity] = useState(null)
 
@@ -20,19 +14,46 @@ function AmenityManagement() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
-  const handleAddAmenity = (newAmenity) => {
-    setAmenities(prev => [...prev, { id: Date.now(), ...newAmenity }])
+  // ✅ Load amenities on mount
+  useEffect(() => {
+    axios.get(API_URL)
+      .then(res => setAmenities(res.data))
+      .catch(err => console.error("Error fetching amenities:", err))
+  }, [])
+
+  const handleAddAmenity = async (newAmenity) => {
+    try {
+      const res = await axios.post(API_URL, newAmenity)
+      setAmenities(prev => [...prev, res.data])
+    } catch (err) {
+      console.error("Error adding amenity:", err)
+    }
   }
 
-  const handleEditAmenity = (updatedAmenity) => {
-    setAmenities(prev => prev.map(a => (a.id === updatedAmenity.id ? updatedAmenity : a)))
-    setEditAmenity(null)
+  const handleEditAmenity = async (updatedAmenity) => {
+    try {
+      const res = await axios.put(`${API_URL}/${updatedAmenity.id}`, updatedAmenity)
+      setAmenities(prev => prev.map(a => (a.id === updatedAmenity.id ? res.data : a)))
+      setEditAmenity(null)
+    } catch (err) {
+      console.error("Error editing amenity:", err)
+    }
   }
 
-  const handleDeleteAmenity = (id) => {
-    setAmenities(prev => prev.filter(a => a.id !== id))
-  }
+const handleDeleteAmenity = async (id) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this amenity?");
+  if (!confirmDelete) return;
 
+  try {
+    await axios.delete(`${API_URL}/${id}`);
+    setAmenities(prev => prev.filter(a => a.id !== id));
+  } catch (err) {
+    console.error("Error deleting amenity:", err);
+  }
+};
+
+
+  // 🔍 Filtering + Pagination logic stays the same
   const filteredAmenities = amenities.filter(a =>
     a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -126,7 +147,7 @@ function AmenityManagement() {
                                                 ) : (
                                                 <tr className="text-bg-secondary">
                                                     <td colSpan="3" className="text-center">
-                                                    <div className="alert alert-dark mb-0" role="alert">
+                                                    <div className="alert alert-light mb-0" role="alert">
                                                         There are no records available
                                                     </div>
                                                     </td>
