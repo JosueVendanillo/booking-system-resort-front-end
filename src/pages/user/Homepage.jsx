@@ -102,6 +102,7 @@ const handleSubmit = async (e) => {
     // Combine date + time into LocalDateTime strings
     const payload = {
       fullname: booking.fullname,
+
       adults: booking.adults,
       kids: booking.kids,
       unitType: booking.unitType,
@@ -109,7 +110,8 @@ const handleSubmit = async (e) => {
       checkOut: `${booking.checkOutDate}T${booking.checkOutTime}:00`, // <-- FIX
       customer: {
         email: booking.customer.email,
-        contactNumber: booking.customer.contactNumber
+        contactNumber: booking.customer.contactNumber,
+        gender: booking.customer.gender,  
       }
     };
 
@@ -125,6 +127,7 @@ const handleSubmit = async (e) => {
     // Reset form
     setBooking({
       fullname: "",
+        gender: "",
       adults: 1,
       kids: 0,
       unitType: "",

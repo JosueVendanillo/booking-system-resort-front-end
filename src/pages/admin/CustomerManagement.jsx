@@ -6,7 +6,7 @@ function CustomerManagement() {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
   const [editingCustomer, setEditingCustomer] = useState(null); // Track customer being edited
-
+   const [showTooltip, setShowTooltip] = useState(null);
     // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -140,14 +140,45 @@ function CustomerManagement() {
                         {customer.contactNumber}
                         </td>
                         <td className="text-center flex items-center justify-center">
+                               <span
+                  style={{ position: "relative", display: "inline-block", cursor: "pointer" }}
+                  onMouseEnter={() => setShowTooltip(customer.id)}
+                  onMouseLeave={() => setShowTooltip(null)}
+                >
+                  <i className="bx bx-info-circle text-info"></i>
+                  {showTooltip === customer.id && (
+                    <small
+                      className="text-muted"
+                      style={{
+                        position: "absolute",
+                        top: "120%",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        background: "#fff",
+                        border: "1px solid #ccc",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        zIndex: 10,
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                      }}
+                    >
+                      To delete this entry, go to Booking Management and Delete its booking entry.
+                    </small>
+                  )}
+                </span>  
                         <button
                             type="button"
                             className="btn btn-danger me-2"
                             onClick={() => handleDelete(customer.id)}
+                            disabled={true}
+                            title="To delete this entry, go to Booking Management and Delete its booking entry."
                         >
                             <i className="bx bx-trash me-1"></i>
                             Delete
                         </button>
+                 
+
                         <button
                             type="button"
                             className="btn btn-primary"

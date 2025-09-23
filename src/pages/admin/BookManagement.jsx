@@ -29,6 +29,7 @@ function BookManagement() {
         .then((res) => {
           if (res.ok) {
             setBookings(bookings.filter((b) => b.id !== id));
+            window.location.reload(); // Refresh page after delete
           } else {
             alert("Failed to delete booking");
           }
@@ -145,7 +146,8 @@ function BookManagement() {
                         type="button"
                         className="btn btn-primary"
                         data-bs-toggle="modal"
-                        data-bs-target="#modal_editBook"
+                        // data-bs-target="#modal_editBook"
+                        data-bs-target="#modal_createEditBook" 
                         onClick={() => setEditingBooking(b)}
                         >
                         <i className="bx bx-edit-alt me-1"></i>

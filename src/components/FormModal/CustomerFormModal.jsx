@@ -5,7 +5,7 @@ function CustomerFormModal({ editingCustomer, onSave }) {
     fullname: "",
     email: "",
     gender: "",
-    contact: ""
+    contactNumber: ""
   });
 
   useEffect(() => {
@@ -14,14 +14,14 @@ function CustomerFormModal({ editingCustomer, onSave }) {
         fullname: editingCustomer.fullname || "",
         email: editingCustomer.email || "",
         gender: editingCustomer.gender || "",
-        contact: editingCustomer.contactNumber || ""
+        contactNumber: editingCustomer.contactNumber || ""
       });
     } else {
       setFormData({
         fullname: "",
         email: "",
         gender: "",
-        contact: ""
+        contactNumber: ""
       });
     }
   }, [editingCustomer]);

@@ -32,8 +32,12 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
     };
   };
 
+  // Form state
   const [formData, setFormData] = useState({
+    bookingCode: "",
     fullname: "",
+    email: "",
+    contactNumber: "",
     adults: 1,
     kids: 0,
     unitType: "",
@@ -54,41 +58,44 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
     }));
   }, [formData.checkInDate, formData.checkInTime]);
 
-  // When modal opens, reset form (new booking or editing booking)
+  // Update formData when editingBooking changes
   useEffect(() => {
-    const modal = document.getElementById("modal_createEditBook");
-    const handleOpen = () => {
-      if (editingBooking) {
-        const checkIn = new Date(editingBooking.checkIn);
-        const checkOut = new Date(editingBooking.checkOut);
-        setFormData({
-          fullname: editingBooking.fullname,
-          adults: editingBooking.adults,
-          kids: editingBooking.kids,
-          unitType: editingBooking.unitType,
-          checkInDate: formatDate(checkIn),
-          checkInTime: formatTime(checkIn),
-          checkOutDate: formatDate(checkOut),
-          checkOutTime: formatTime(checkOut),
-        });
-      } else {
-        const checkIn = new Date();
-        const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
-        setFormData({
-          fullname: "",
-          adults: 1,
-          kids: 0,
-          unitType: "",
-          checkInDate: formatDate(checkIn),
-          checkInTime: formatTime(checkIn),
-          checkOutDate,
-          checkOutTime,
-        });
-      }
-    };
-    modal.addEventListener("show.bs.modal", handleOpen);
-    return () => modal.removeEventListener("show.bs.modal", handleOpen);
+    if (editingBooking) {
+      const checkIn = new Date(editingBooking.checkIn);
+      const checkOut = new Date(editingBooking.checkOut);
+      setFormData({
+        bookingCode: editingBooking.bookingCode || "",
+        fullname: editingBooking.fullname || "",
+        email: editingBooking.email || editingBooking.customer?.email || "",
+        contactNumber: editingBooking.contactNumber || editingBooking.customer?.contactNumber || "",
+        adults: editingBooking.adults || 1,
+        kids: editingBooking.kids || 0,
+        unitType: editingBooking.unitType || "",
+        checkInDate: formatDate(checkIn),
+        checkInTime: formatTime(checkIn),
+        checkOutDate: formatDate(checkOut),
+        checkOutTime: formatTime(checkOut),
+      });
+    } else {
+      const checkIn = new Date();
+      const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
+      setFormData({
+        bookingCode: "",
+        fullname: "",
+        email: "",
+        contactNumber: "",
+        adults: 1,
+        kids: 0,
+        unitType: "",
+        checkInDate: formatDate(checkIn),
+        checkInTime: getNowTime(),
+        checkOutDate,
+        checkOutTime,
+      });
+    }
   }, [editingBooking]);
+
+
 
     const handleChange = (e) => {
     const { name, value } = e.target;
@@ -170,8 +177,10 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
       if (editingBooking) {
         setBookings(bookings.map((b) => (b.id === editingBooking.id ? savedBooking : b)));
         setEditingBooking(null);
+        window.location.reload(); // Refresh page after delete
       } else {
         setBookings([...bookings, savedBooking]);
+        window.location.reload(); // Refresh page after add
       }
 
       const modalElement = document.getElementById("modal_createEditBook");
@@ -196,6 +205,19 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
 
           <div className="modal-body">
             <form className="row" onSubmit={handleSubmit}>
+               {/* Booking Code (read-only, only when editing) */}
+              {editingBooking && (
+                <div className="col-12 mb-3">
+                  <label className="form-label">Booking Code</label>
+                  <input
+                    className="form-control"
+                    name="bookingCode"
+                    value={formData.bookingCode}
+                    readOnly
+                  />
+                </div>
+              )}
+
               {/* User Select */}
               <div className="col-12 mb-3">
                 <label className="form-label">Select User</label>
@@ -224,7 +246,13 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                disabled={!!editingBooking} // Disable if editing
               />
+                {editingBooking && (
+                <small className="text-muted">
+                  To update email, go to Customer Management.
+                </small>
+              )}
             </div>
 
             {/* Contact */}
@@ -235,7 +263,13 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
               name="contactNumber"
               value={formData.contactNumber}
               onChange={handleChange}
+              disabled={!!editingBooking} // Disable if editing
             />
+              {editingBooking && (
+                <small className="text-muted">
+                  To update contact number, go to Customer Management.
+                </small>
+              )}
           </div>
 
               {/* Adults */}
@@ -243,7 +277,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 <label className="form-label">Adults</label>
                 <div className="input-group">
                   <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, adults: Math.max(1, (parseInt(prev.adults) || 1) - 1) }))}>-</button>
-                  <input type="text" className="form-control text-center" name="adults" value={formData.adults || 1} readOnly />
+                  <input type="text" className="form-control text-center" name="adults" value={formData.adults || 1} min={1} max={20} onChange={handleChange} />
                   <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, adults: Math.min(20, (parseInt(prev.adults) || 1) + 1) }))}>+</button>
                 </div>
               </div>
@@ -253,7 +287,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 <label className="form-label">Kids</label>
                 <div className="input-group">
                   <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, kids: Math.max(0, (parseInt(prev.kids) || 0) - 1) }))}>-</button>
-                  <input type="text" className="form-control text-center" name="kids" value={formData.kids || 0} readOnly />
+                  <input type="text" className="form-control text-center" name="kids" value={formData.kids || 0} min={1} max={20} onChange={handleChange} />
                   <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, kids: Math.min(20, (parseInt(prev.kids) || 0) + 1) }))}>+</button>
                 </div>
               </div>
@@ -279,11 +313,17 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Date</label>
-                    <input className="form-control" type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} min={getToday()} />
+                    <input className="form-control" type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} min={getToday()} disabled={!!editingBooking} />
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Time</label>
-                    <input className="form-control" type="time" name="checkInTime" value={formData.checkInTime} onChange={handleChange} min={formData.checkInDate === getToday() ? getNowTime() : "00:00"} />
+                    <input className="form-control" type="time" name="checkInTime" value={formData.checkInTime} onChange={handleChange} min={
+                      !editingBooking && formData.checkInDate === getToday()
+                        ? getNowTime()
+                        : "00:00"
+                    } 
+                    disabled={!!editingBooking} // Disable if editing
+                    />
                   </div>
                 </div>
               </div>
