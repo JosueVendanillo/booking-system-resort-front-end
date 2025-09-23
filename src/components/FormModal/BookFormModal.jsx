@@ -140,6 +140,11 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
       unitType: formData.unitType,
       checkIn: formatDateTimeForBackend(checkIn),
       checkOut: formatDateTimeForBackend(checkOut),
+      customer: {
+        fullname: formData.fullname,
+        email: formData.email,
+        contactNumber: formData.contactNumber
+      }
     };
 
     try {
@@ -194,14 +199,44 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
               {/* User Select */}
               <div className="col-12 mb-3">
                 <label className="form-label">Select User</label>
-                <select className="form-select" name="fullname" value={formData.fullname} onChange={handleChange}>
+                  <input
+                    className="form-control"
+                    name="fullname"
+                    value={formData.fullname}
+                    onChange={handleChange}
+                  />
+
+                {/* <select className="form-select" name="fullname" value={formData.fullname} onChange={handleChange}>
                   <option value="">Select user</option>
                   <option value="John Doe">John Doe</option>
                   <option value="Wick John">Wick John</option>
                   <option value="Tupe D">Tupe D</option>
                   <option value="Cassy G">Cassy G</option>
-                </select>
+                </select> */}
               </div>
+
+              {/* Email */}
+            <div className="col-6 mb-3">
+              <label className="form-label">Email</label>
+              <input
+                className="form-control"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Contact */}
+          <div className="col-6 mb-3">
+            <label className="form-label">Contact Number</label>
+            <input
+              className="form-control"
+              name="contactNumber"
+              value={formData.contactNumber}
+              onChange={handleChange}
+            />
+          </div>
 
               {/* Adults */}
               <div className="col-6 mb-3">

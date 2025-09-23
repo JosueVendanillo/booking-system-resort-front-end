@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from 'react-router-dom'
 import BookFormModal from '../../components/FormModal/BookFormModal'
-import BookEditModal from '../../components/FormModal/BookEditModal'  // <--- Add this
+// import BookEditModal from '../../components/FormModal/BookEditModal'  // <--- Add this
 
 
 
@@ -9,6 +9,10 @@ function BookManagement() {
   const [search, setSearch] = useState("");
   const [bookings, setBookings] = useState([]);
   const [editingBooking, setEditingBooking] = useState(null);
+
+    // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Load bookings from backend
   useEffect(() => {
@@ -37,6 +41,18 @@ function BookManagement() {
   const filteredBookings = bookings.filter((b) =>
     b.fullname.toLowerCase().includes(search.toLowerCase())
   );
+
+  
+  // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / itemsPerPage));
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBookings = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
 
   return (
     <>
@@ -67,6 +83,7 @@ function BookManagement() {
             <table className="table table-hover">
               <thead>
                 <tr>
+                  <th>Booking ID</th>
                   <th>Fullname</th>
                   <th className="text-center">Type</th>
                   {/* <th className="text-center">Type Name</th> */}
@@ -82,9 +99,10 @@ function BookManagement() {
                 </tr>
               </thead>
               <tbody className="table-border-bottom-0">
-                {filteredBookings.length > 0 ? (
-                  filteredBookings.map((b) => (
+                  {currentBookings.length > 0 ? (
+                    currentBookings.map((b) => (
                     <tr key={b.id}>
+                      <td>{b.bookingCode}</td>
                       <td>{b.fullname}</td>
                       <td className="text-center">{b.unitType}</td>
                       {/* <td className="text-center">{b.typeName || "-"}</td> */}
@@ -149,6 +167,30 @@ function BookManagement() {
               </tbody>
             </table>
           </div>
+          {/* Pagination Controls */}
+          <div className="d-flex justify-content-center align-items-center py-3">
+            <nav>
+              <ul className="pagination mb-0">
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => goToPage(currentPage - 1)}>
+                    Previous
+                  </button>
+                </li>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
+                    <button className="page-link" onClick={() => goToPage(i + 1)}>
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => goToPage(currentPage + 1)}>
+                    Next
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       </div>
 
@@ -158,14 +200,6 @@ function BookManagement() {
   bookings={bookings}
   setBookings={setBookings}
   editingBooking={editingBooking}  // can be null for new record
-  setEditingBooking={setEditingBooking}
-/>
-
-{/* Edit Modal */}
-<BookEditModal
-  bookings={bookings}
-  setBookings={setBookings}
-  editingBooking={editingBooking}
   setEditingBooking={setEditingBooking}
 />
 
