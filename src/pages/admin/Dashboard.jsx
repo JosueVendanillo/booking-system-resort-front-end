@@ -16,51 +16,123 @@ import axios from 'axios';
 function Dashboard() {
   ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-  const [user, setUser] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [user, setUser] = useState(null)
+  const [stats, setStats] = useState(null)
+  const [chartData, setChartData] = useState({ labels: [], datasets: [] })
 
-  useEffect(() => {
-    const loggedUser = getUser();
-    if (loggedUser) {
-      setUser(loggedUser);
+  // Generate last N months labels (e.g., 12 months)
+  const generateLastMonths = (count = 12) => {
+    const labels = []
+    const today = new Date()
+    for (let i = count - 1; i >= 0; i--) {
+      const dt = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      labels.push(
+        dt.toLocaleString('en-US', {
+          month: 'short',
+          year: 'numeric',
+          timeZone: 'Asia/Manila'
+        })
+      )
     }
+    return labels
+  }
+
+  // Format backend month like "2025-09" → "Sep 2025"
+  const formatMonthYearFromIso = (isoMonth) => {
+    const parts = (isoMonth || '').split('-')
+    if (parts.length < 2) return isoMonth
+    const y = parseInt(parts[0], 10)
+    const m = parseInt(parts[1], 10) - 1
+    const dt = new Date(Date.UTC(y, m, 1))
+    return dt.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'Asia/Manila' })
+  }
+
+useEffect(() => {
+  const loggedUser = getUser()
+  if (loggedUser) setUser(loggedUser)
+
+  // Initialize stats object
+  setStats({
+    grossRevenue: 0,
+    totalBookings: 0,
+    totalAccounts: 0,
+    totalCustomers: 0,
+    totalAmenities: 0,
+    availableRooms: 0,
+    billCount: 0
+  })
+
+  // Fetch gross revenue
+  axios.get('http://localhost:8080/api/dashboard/gross-revenue')
+    .then(res => setStats(prev => ({ ...prev, grossRevenue: res.data.grossRevenue || 0 })))
+    .catch(err => console.error('Error loading gross revenue:', err))
+
+  // Fetch total bookings
+  axios.get('http://localhost:8080/api/dashboard/total-bookings')
+    .then(res => setStats(prev => ({ ...prev, totalBookings: res.data.totalBookings || 0 })))
+    .catch(err => console.error('Error loading total bookings:', err))
+
+    // Fetch total customers
+  axios.get('http://localhost:8080/api/dashboard/total-customers')
+  .then(res => setStats(prev => ({ ...prev, totalCustomers: res.data.totalCustomers })))
+  .catch(err => console.error('Error loading total customers:', err))
 
 
-        // Fetch dashboard stats
-    axios.get("http://localhost:8080/api/dashboard")
-      .then(res => setStats(res.data))
-      .catch(err => console.error("Error loading dashboard stats:", err));
-  }, []);
+  // Fetch monthly revenue for chart
+  axios.get('http://localhost:8080/api/dashboard/monthly-revenue')
+    .then(res => {
+      const monthlyData = res.data
+      const last12Months = generateLastMonths(12)
 
-  // Chart.js Data
-  const chartData = {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-    datasets: [
-      {
-        label: 'Gross Revenue (₱)',
-        data: [120000, 150000, 180000, 200000, 170000, 190000, 220000],
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
-      },
-    ],
-  };
+      const dataMap = {}
+      monthlyData.forEach(m => {
+        const label = formatMonthYearFromIso(m.month)
+        dataMap[label] = Number(m.total || 0)
+      })
 
-  // Chart.js Options
+      const chartLabels = last12Months
+      const chartValues = last12Months.map(lbl => dataMap[lbl] || 0)
+
+      setChartData({
+        labels: chartLabels,
+        datasets: [
+          {
+            label: 'Gross Revenue (₱)',
+            data: chartValues,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
+          },
+        ],
+      })
+    })
+    .catch(err => console.error('Error loading monthly revenue:', err))
+}, [])
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Monthly Gross Revenue',
+      legend: { position: 'top' },
+      title: { display: true, text: 'Monthly Gross Revenue' },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const v = context.raw ?? context.parsed?.y ?? 0
+            return `₱${Number(v).toLocaleString()}`
+          },
+        },
       },
     },
-  };
-
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: val => `₱${Number(val).toLocaleString()}`,
+        },
+      },
+    },
+  }
   return (
     <div className="container-xxl flex-grow-1 container-p-y">
       <div className="row">
@@ -99,7 +171,7 @@ function Dashboard() {
                     </div>
                   </div>
                   <span className="fw-semibold d-block mb-1">Gross Revenue</span>
-                  <h3 className="card-title mb-2">₱{stats?.grossRevenue || 0}</h3>
+                  <h3 className="card-title mb-2">₱{stats?.grossRevenue?.toLocaleString()  || 0}</h3>
                 </div>
               </div>
             </div>
@@ -228,8 +300,8 @@ function Dashboard() {
                       </button>
                     </div>
                   </div>
-                  <span className="fw-semibold d-block mb-1">Total Accounts</span>
-                  <h3 className="card-title mb-2">2344</h3>
+                  <span className="fw-semibold d-block mb-1">Additional</span>
+                  <h3 className="card-title mb-2">####</h3>
                 </div>
               </div>
             </div>
