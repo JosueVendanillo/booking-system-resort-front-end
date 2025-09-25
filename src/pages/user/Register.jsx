@@ -109,6 +109,18 @@ function Register() {
                                 style={{ borderRadius: '10px' }}
                             />
                         </div>
+                        <div className="mb-3">
+                            <label htmlFor="userRole"className="form-label fw-semibold">User Role</label>
+                            <select
+                                id="userRole"
+                                className="form-select"
+                                style={{ borderRadius: '10px' }}
+                            >
+                                <option value="CUSTOMER" selected>Customer</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="MODERATOR">Moderator</option>
+                            </select>
+                        </div>
                         <button
                             type="submit"
                             className="btn btn-primary w-100 py-2"

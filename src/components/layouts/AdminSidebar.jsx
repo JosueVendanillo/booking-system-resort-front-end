@@ -96,6 +96,17 @@ function AdminSidebar() {
                         <div data-i18n="Basic">Payment Management</div>
                     </div>
                 </NavLink>
+                <NavLink
+                    to="/admin/room"
+                    className={({ isActive }) =>
+                        `menu-item ${isActive ? 'active' : ''}`
+                    }
+                >
+                    <div className="menu-link">
+                        <i className="menu-icon tf-icons bx bxs-bed"></i>
+                        <div data-i18n="Basic">Room Management</div>
+                    </div>
+                </NavLink>
             </ul>
         </aside>
     )

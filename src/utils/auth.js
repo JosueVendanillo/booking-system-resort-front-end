@@ -13,6 +13,13 @@ export const getUser = () => {
   return user ? JSON.parse(user) : null;
 };
 
+// Get role of the logged-in user
+export const getUserRole = () => {
+  const user = getUser();
+  return user ? user.role : null; // will now return "ADMIN", "MODERATOR", etc.
+};
+
+
 // Remove user (logout)
 export const clearUser = () => {
   localStorage.removeItem(USER_KEY);

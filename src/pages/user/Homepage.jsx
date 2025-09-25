@@ -1,4 +1,5 @@
-import React from 'react'
+import React,{ useState, useEffect } from 'react'
+import axios from 'axios';
 import { Link, NavLink } from 'react-router-dom'
 import {
     FaMapMarkerAlt,
@@ -15,6 +16,138 @@ import {
 } from "react-icons/fa"
 
 function Homepage() {
+
+ 
+// Add these helpers at the top of your component
+const formatDate = (date) => date.toLocaleDateString("en-CA");
+const formatTime = (date) => date.toTimeString().slice(0, 5);
+const getToday = () => formatDate(new Date());
+const getNowTime = () => formatTime(new Date());
+const parseDateTimeLocal = (dateStr, timeStr) => {
+  const [y, m, d] = (dateStr || getToday()).split("-").map(Number);
+  const [hh, mm] = (timeStr || "00:00").split(":").map(Number);
+  return new Date(y, m - 1, d, hh, mm, 0);
+};
+const getDefaultCheckout = (checkIn) => {
+  const co = new Date(checkIn);
+  co.setHours(co.getHours() + 1);
+  return {
+    checkOutDate: formatDate(co),
+    checkOutTime: formatTime(co),
+  };
+};
+   
+
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+// Update your booking state initialization
+const [booking, setBooking] = useState({
+  fullname: "",
+  gender: "",
+  adults: 1,
+  kids: 0,
+  unitType: "",
+  checkInDate: getToday(),
+  checkInTime: getNowTime(),
+  checkOutDate: getToday(),
+  checkOutTime: getNowTime(),
+  customer: {
+    email: "",
+    contactNumber: ""
+  }
+});
+
+// Automatically update checkout when check-in changes
+useEffect(() => {
+  const checkIn = parseDateTimeLocal(booking.checkInDate, booking.checkInTime);
+  const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
+  setBooking((prev) => ({
+    ...prev,
+    checkOutDate,
+    checkOutTime,
+  }));
+}, [booking.checkInDate, booking.checkInTime]);
+
+
+  // Handle simple field changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setBooking((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle nested customer field changes
+  const handleCustomerChange = (e) => {
+    const { name, value } = e.target;
+    setBooking((prev) => ({
+      ...prev,
+      customer: {
+        ...prev.customer,
+        [name]: value
+      }
+    }));
+  };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setSuccess("");
+  setError("");
+
+  try {
+    // Combine date + time into LocalDateTime strings
+    const payload = {
+      fullname: booking.fullname,
+
+      adults: booking.adults,
+      kids: booking.kids,
+      unitType: booking.unitType,
+      checkIn: `${booking.checkInDate}T${booking.checkInTime}:00`,   // <-- FIX
+      checkOut: `${booking.checkOutDate}T${booking.checkOutTime}:00`, // <-- FIX
+      customer: {
+        email: booking.customer.email,
+        contactNumber: booking.customer.contactNumber,
+        gender: booking.customer.gender,  
+      }
+    };
+
+    const response = await axios.post(
+      "http://localhost:8080/api/bookings",
+      payload
+    );
+
+    console.log("Booking saved:", response.data);
+    setSuccess("Booking successful!");
+    alert("Booking successful!");
+
+    // Reset form
+    setBooking({
+      fullname: "",
+        gender: "",
+      adults: 1,
+      kids: 0,
+      unitType: "",
+      checkInDate: getToday(),
+      checkInTime: getNowTime(),
+      checkOutDate: getToday(),
+      checkOutTime: getNowTime(),
+      customer: {
+        email: "",
+        contactNumber: ""
+      }
+    });
+  } catch (err) {
+    setError("Failed to submit booking. Please try again.");
+    console.error(err.response?.data || err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
     
 
     return (
@@ -298,84 +431,207 @@ function Homepage() {
                             <div className="card shadow-lg">
                                 <div className="card-body p-4">
                                     <h3 className="h4 fw-semibold mb-4 text-primary">Reserve Your Stay</h3>
-                                    <form className="row g-3">
+                                    <form className="row g-3" onSubmit={handleSubmit}>
                                         <div className="col-12">
-                                            <label htmlFor="checkin" className="form-label fw-medium">Fullname</label>
+                                            <label htmlFor="fullname" className="form-label fw-medium">Fullname</label>
                                             <input
-                                                type="text"
-                                                className="form-control"
-                                                required
+                                            type="text"
+                                            className="form-control"
+                                            name="fullname"
+                                            value={booking.fullname}
+                                            onChange={handleChange}
+                                            required
                                             />
                                         </div>
 
                                         <div className="col-md-6">
-                                            <label htmlFor="checkin" className="form-label fw-medium">Email</label>
-                                            <input
-                                                type="email"
-                                                className="form-control"
+                                            <label htmlFor="gender" className="form-label fw-medium">Gender</label>
+                                            <select
+                                                className="form-select"
+                                                id="gender"
+                                                name="gender"
+                                                value={booking.gender}
+                                                onChange={handleChange}
                                                 required
-                                            />
-                                        </div>
-
-                                        <div className="col-md-6">
-                                            <label htmlFor="checkin" className="form-label fw-medium">Contact Number</label>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="col-md-6">
-                                            <label htmlFor="checkin" className="form-label fw-medium">Check-in Date</label>
-                                            <input
-                                                type="date"
-                                                className="form-control"
-                                                id="checkin"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="col-md-6">
-                                            <label htmlFor="checkout" className="form-label fw-medium">Check-out Date</label>
-                                            <input
-                                                type="date"
-                                                className="form-control"
-                                                id="checkout"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="col-md-6">
-                                            <label htmlFor="guests" className="form-label fw-medium">Adult</label>
-                                            <select className="form-select" id="guests" required>
-                                                <option value="" disabled selected>Select Adult</option>
-                                                <option value="1">1 Adult</option>
-                                                <option value="2">2 Adults</option>
-                                                <option value="3">3 Adults</option>
-                                                <option value="4">4 Adults</option>
+                                            >
+                                                <option value="" disabled>Select Gender</option>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
                                             </select>
+                                        </div>
+
+                                        <div className="col-md-6">
+                                            <label htmlFor="email" className="form-label fw-medium">Email</label>
+                                            <input
+                                            type="email"
+                                            className="form-control"
+                                            name="email"
+                                            value={booking.customer?.email || ""}
+                                            onChange={handleCustomerChange}
+                                            required
+                                            />
+                                        </div>
+
+                                        <div className="col-md-6">
+                                            <label htmlFor="contactNumber" className="form-label fw-medium">Contact Number</label>
+                                            <input
+                                            type="text"
+                                            className="form-control"
+                                            name="contactNumber"
+                                            value={booking.customer?.contactNumber || ""}
+                                            onChange={handleCustomerChange}
+                                            required
+                                            />
+                                        </div>
+
+                                        <div className="row w-100">
+                                        <div className="col-md-6 mb-3">
+                                            <label htmlFor="checkInDate" className="form-label fw-medium">Check-in Date</label>
+                                            <input
+                                            type="date"
+                                            className="form-control"
+                                            id="checkInDate"
+                                            name="checkInDate"
+                                            value={booking.checkInDate}
+                                            onChange={handleChange}
+                                            min={getToday()}
+                                            required
+                                            />
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label htmlFor="checkInTime" className="form-label fw-medium">Check-in Time</label>
+                                            <input
+                                            type="time"
+                                            className="form-control"
+                                            id="checkInTime"
+                                            name="checkInTime"
+                                            value={booking.checkInTime}
+                                            onChange={handleChange}
+                                            min={booking.checkInDate === getToday() ? getNowTime() : "00:00"}
+                                            required
+                                            />
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label htmlFor="checkOutDate" className="form-label fw-medium">Check-out Date</label>
+                                            <input
+                                            type="date"
+                                            className="form-control"
+                                            id="checkOutDate"
+                                            name="checkOutDate"
+                                            value={booking.checkOutDate}
+                                            onChange={handleChange}
+                                            min={booking.checkInDate}
+                                            required
+                                            />
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label htmlFor="checkOutTime" className="form-label fw-medium">Check-out Time</label>
+                                            <input
+                                            type="time"
+                                            className="form-control"
+                                            id="checkOutTime"
+                                            name="checkOutTime"
+                                            value={booking.checkOutTime}
+                                            onChange={handleChange}
+                                            min={booking.checkOutDate === booking.checkInDate ? booking.checkInTime : "00:00"}
+                                            required
+                                            />
+                                        </div>
+                                        </div>
+
+                                            <div className="col-md-6">
+                                            <label htmlFor="adults" className="form-label fw-medium">Adult</label>
+                                            <div className="input-group">
+                                                <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={() =>
+                                                    setBooking((prev) => ({
+                                                    ...prev,
+                                                    adults: Math.max(1, (parseInt(prev.adults) || 1) - 1),
+                                                    }))
+                                                }
+                                                >
+                                                -
+                                                </button>
+                                                <input
+                                                type="text"
+                                                className="form-control text-center"
+                                                name="adults"
+                                                value={booking.adults || 1}
+                                                readOnly
+                                                />
+                                                <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={() =>
+                                                    setBooking((prev) => ({
+                                                    ...prev,
+                                                    adults: Math.min(20, (parseInt(prev.adults) || 1) + 1),
+                                                    }))
+                                                }
+                                                >
+                                                +
+                                                </button>
                                             </div>
+                                            </div>
+
+                                            <div className="col-md-6">
+                                            <label htmlFor="kids" className="form-label fw-medium">Kids</label>
+                                            <div className="input-group">
+                                                <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={() =>
+                                                    setBooking((prev) => ({
+                                                    ...prev,
+                                                    kids: Math.max(0, (parseInt(prev.kids) || 0) - 1),
+                                                    }))
+                                                }
+                                                >
+                                                -
+                                                </button>
+                                                <input
+                                                type="text"
+                                                className="form-control text-center"
+                                                name="kids"
+                                                value={booking.kids || 0}
+                                                readOnly
+                                                />
+                                                <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={() =>
+                                                    setBooking((prev) => ({
+                                                    ...prev,
+                                                    kids: Math.min(20, (parseInt(prev.kids) || 0) + 1),
+                                                    }))
+                                                }
+                                                >
+                                                +
+                                                </button>
+                                            </div>
+                                            </div>
+
                                         <div className="col-md-6">
-                                            <label htmlFor="guests" className="form-label fw-medium">Kids</label>
-                                            <select className="form-select" id="guests">
-                                                <option value="" disabled selected>Select Kids</option>
-                                                <option value="1">1 Kid</option>
-                                                <option value="2">2 Kids</option>
-                                                <option value="3">3 Kids</option>
-                                                <option value="4">4 Kids</option>
-                                            </select>
-                                        </div>
-                                        <div className="col-md-6">
-                                            <label htmlFor="room" className="form-label fw-medium">Room Type</label>
-                                            <select className="form-select" id="room" required>
-                                                <option value="" disabled selected>Select Room</option>
-                                                <option value="standard">KTV Room</option>
-                                                <option value="deluxe">Big Cabana</option>
-                                                <option value="suite">Small Cabana</option>
-                                                <option value="suite">Brown Table</option>
-                                                <option value="suite">Colored Table</option>
-                                                <option value="suite">Garden Table</option>
-                                                <option value="suite">Couple Room (For Private) </option>
-                                                <option value="suite">Family Room (For Private) </option>
+                                            <label htmlFor="unitType" className="form-label fw-medium">Room Type</label>
+                                            <select
+                                            className="form-select"
+                                            id="unitType"
+                                            name="unitType"
+                                            value={booking.unitType}
+                                            onChange={handleChange}
+                                            required
+                                            >
+                                            <option value="" disabled>Select Room</option>
+                                            <option value="ktv-room">KTV Room</option>
+                                            <option value="big-cabana">Big Cabana</option>
+                                            <option value="small-cabana">Small Cabana</option>
+                                            <option value="brown-table">Brown Table</option>
+                                            <option value="colored-table">Colored Table</option>
+                                            <option value="garden-table">Garden Table</option>
+                                            <option value="couple-room">Couple Room (For Private)</option>
+                                            <option value="family-room">Family Room (For Private)</option>
                                             </select>
                                         </div>
                                         <section id="price-list" class="py-5 bg-light">
