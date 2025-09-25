@@ -27,6 +27,7 @@ function Login() {
 
         console.log("response email:", response.data.email);
         console.log("response fullName:", response.data.fullName);
+        console.log("response role:", response.data.role);
         console.log("response token:", response.data.token);
 
       if (response.data) {
@@ -34,6 +35,7 @@ function Login() {
         const userData = {
           fullName: response.data.fullName,
           email: response.data.email,
+          role: response.data.role, // e.g., "ADMIN", "MODERATOR", "CUSTOMER"
           token: response.data.token,
         };
 
@@ -42,8 +44,11 @@ function Login() {
 
         console.log("Logged in user:", userData);
 
-        // Redirect to dashboard
-        navigate("/admin/dashboard");
+        if (userData.role === "ADMIN" || userData.role === "MODERATOR") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/"); // Customer → homepage
+        }
       }
     } catch (error) {
 

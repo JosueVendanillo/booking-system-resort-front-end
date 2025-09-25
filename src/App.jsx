@@ -11,6 +11,7 @@ import Homepage from './pages/user/Homepage';
 import Gallery from './pages/user/Gallery';
 import Login from './pages/user/Login';
 import Register from './pages/user/Register';
+import RoomInventory from './pages/admin/RoomManagement';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -22,6 +23,7 @@ const router = createBrowserRouter(
         <Route path="/admin/amenity" element={<AmenityManagement />} />
         <Route path="/admin/customer" element={<CustomerManagement />} />
         <Route path="/admin/payment" element={<PaymentManagement />} />
+        <Route path="/admin/room" element={<RoomInventory/>} />
       </Route>
 
       <Route element={<UserLayout />}>

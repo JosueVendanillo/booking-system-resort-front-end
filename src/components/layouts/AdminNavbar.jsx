@@ -1,17 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom';
-import { getUser } from '../../utils/auth';
+import { getUser, getUserRole } from '../../utils/auth';
 
 function AdminNavbar() {
 
 //user session
      const [user, setUser] = useState(null);
+     const [userRole, setRole] = useState(null);
     
       useEffect(() => {
         const loggedUser = getUser();
         if (loggedUser) {
           setUser(loggedUser);
         }
+
+
+ const userRole = getUserRole();
+    if (userRole) {
+      setRole(userRole);
+    } else {
+      setRole("GUEST");
+    }
       }, []);
 
 
@@ -26,6 +35,7 @@ function AdminNavbar() {
         '/admin/book': 'Booking Management',
         '/admin/customer': 'Customers Management',
         '/admin/payment': 'Payment Management',
+        '/admin/room': 'Room Management',
     };
 
     const currentTitle = titleMap[location.pathname] || 'Admin Panel';
@@ -58,8 +68,8 @@ function AdminNavbar() {
                                         </div>
                                         <div className="flex-grow-1">
                                             <span
-                                                className="fw-semibold d-block">Chelsea</span>
-                                            <small className="text-muted">Admin</small>
+                                                className="fw-semibold d-block">{user?. fullName ||user?. email || "Guest"}</span>
+                                            <small className="text-muted">{userRole}</small>
                                         </div>
                                     </div>
                                 </a>
@@ -69,7 +79,7 @@ function AdminNavbar() {
                             </li>
 
                             <li>
-                                <NavLink to="/" className="dropdown-item">
+                                <NavLink to="/login" className="dropdown-item">
                                     <i className="bx bx-power-off me-2"></i>
                                     <span className="align-middle">Log Out</span>
                                 </NavLink>

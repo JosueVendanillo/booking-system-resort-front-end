@@ -77,6 +77,20 @@ useEffect(() => {
   .then(res => setStats(prev => ({ ...prev, totalCustomers: res.data.totalCustomers })))
   .catch(err => console.error('Error loading total customers:', err))
 
+  // Fetch total accounts
+  axios.get('http://localhost:8080/api/dashboard/total-accounts')
+    .then(res => setStats(prev => ({ ...prev, totalAccounts: res.data.totalAccounts })))
+    .catch(err => console.error('Error loading total accounts:', err))
+
+  //Fetch total amenities
+  axios.get('http://localhost:8080/api/dashboard/total-amenities')
+    .then(res => setStats(prev => ({ ...prev, totalAmenities: res.data.totalAmenities })))
+    .catch(err => console.error('Error loading total amenities:', err))
+
+  //Fetch total Bills
+  axios.get('http://localhost:8080/api/dashboard/total-bills')
+    .then(res => setStats(prev => ({ ...prev, billCount: res.data.totalBills })))
+    .catch(err => console.error('Error loading total bills:', err))
 
   // Fetch monthly revenue for chart
   axios.get('http://localhost:8080/api/dashboard/monthly-revenue')
@@ -107,6 +121,17 @@ useEffect(() => {
       })
     })
     .catch(err => console.error('Error loading monthly revenue:', err))
+
+    //Fetch total rooms
+    axios.get('http://localhost:8080/api/dashboard/total-rooms')
+    .then(res => setStats(prev => ({ ...prev, totalRooms: res.data.totalRooms })))
+    .catch(err => console.error('Error loading total rooms:', err))
+
+    //Fetch available rooms
+    axios.get('http://localhost:8080/api/dashboard/available-rooms')
+    .then(res => setStats(prev => ({ ...prev, availableRooms: res.data.availableRooms })))
+    .catch(err => console.error('Error loading available rooms:', err)) 
+
 }, [])
 
   const chartOptions = {
@@ -268,8 +293,8 @@ useEffect(() => {
                       </button>
                     </div>
                   </div>
-                  <span className="fw-semibold d-block mb-1">Available Rooms</span>
-                  <h3 className="card-title mb-2">{stats?.availableRooms || 0}</h3>
+                  <span className="fw-semibold d-block mb-1">Total Rooms</span>
+                  <h3 className="card-title mb-2">{stats?.totalRooms || 0}</h3>
                 </div>
               </div>
             </div>
@@ -296,12 +321,12 @@ useEffect(() => {
                   <div className="card-title d-flex align-items-start justify-content-between">
                     <div className="avatar flex-shrink-0">
                       <button type="button" className="btn rounded-pill btn-icon btn-primary">
-                        <span className="tf-icons bx bxs-user-circle"></span>
+                        <span className="tf-icons bx bx-check-double"></span>
                       </button>
                     </div>
                   </div>
-                  <span className="fw-semibold d-block mb-1">Additional</span>
-                  <h3 className="card-title mb-2">####</h3>
+                  <span className="fw-semibold d-block mb-1">Available Rooms</span>
+                  <h3 className="card-title mb-2">{stats?.availableRooms || 0}</h3>
                 </div>
               </div>
             </div>
