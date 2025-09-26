@@ -7,6 +7,7 @@ function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('CUSTOMER'); // Default role is CUSTOMER
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,9 +20,10 @@ function Register() {
 
     try {
       await axios.post('http://localhost:8080/api/auth/register', {
-        fullName,  // ✅ matches backend User.fullName
-        email,     // ✅ matches backend User.email
-        password   // ✅ matches backend expects "password"
+        fullName,  // matches backend User.fullName
+        email,     // matches backend User.email
+        password,   // matches backend expects "password"
+        role
       });
       alert("Registration successful");
       navigate('/login');
@@ -115,8 +117,10 @@ function Register() {
                                 id="userRole"
                                 className="form-select"
                                 style={{ borderRadius: '10px' }}
+                                value={role}
+                                onChange={(e) => setRole(e.target.value)}
                             >
-                                <option value="CUSTOMER" selected>Customer</option>
+                                <option value="CUSTOMER">Customer</option>
                                 <option value="ADMIN">Admin</option>
                                 <option value="MODERATOR">Moderator</option>
                             </select>

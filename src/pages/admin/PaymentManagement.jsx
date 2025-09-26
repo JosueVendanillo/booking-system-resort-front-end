@@ -7,7 +7,11 @@ function PaymentManagement() {
   const [search, setSearch] = useState("");
   const [editingPayment, setEditingPayment] = useState(null);
 
-  // 🔹 Fetch all payments on mount
+   // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  //   Fetch all payments on mount
   useEffect(() => {
     fetchPayments();
   }, []);
@@ -21,12 +25,22 @@ function PaymentManagement() {
     }
   };
 
-  // 🔹 Filter payments by search (Booking ID or method)
+  //   Filter payments by search (Booking ID or method)
   const filteredPayments = payments.filter(
     (p) =>
       p.bookingCode.toLowerCase().includes(search.toLowerCase()) ||
       p.paymentMethod.toLowerCase().includes(search.toLowerCase())
   );
+
+   // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / itemsPerPage));
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPayments = filteredPayments.slice(indexOfFirstItem, indexOfLastItem);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
   return (
     <>
@@ -66,8 +80,8 @@ function PaymentManagement() {
                 </tr>
               </thead>
               <tbody className="table-border-bottom-0">
-                {filteredPayments.length > 0 ? (
-                  filteredPayments.map((p) => (
+                {currentPayments.length > 0 ? (
+                  currentPayments.map((p) => (
                     <tr key={p.id}>
                       <td>{p.bookingCode}</td>
                       <td className="text-center">
@@ -107,10 +121,34 @@ function PaymentManagement() {
               </tbody>
             </table>
           </div>
+          {/* Pagination Controls */}
+          <div className="d-flex justify-content-center align-items-center py-3">
+            <nav>
+              <ul className="pagination mb-0">
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => goToPage(currentPage - 1)}>
+                    Previous
+                  </button>
+                </li>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
+                    <button className="page-link" onClick={() => goToPage(i + 1)}>
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => goToPage(currentPage + 1)}>
+                    Next
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       </div>
 
-      {/* 🔹 Pass data + refresh callback into modal */}
+      {/*   Pass data + refresh callback into modal */}
       <PaymentFormModal
         fetchPayments={fetchPayments}
         editingPayment={editingPayment}

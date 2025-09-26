@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AccountFormModal from "../../components/FormModal/AccountFormModal";
-import { getUser } from "../../utils/auth";
+import { getUser,getUserRole } from "../../utils/auth";
 
 function AccountManagement() {
   const [accounts, setAccounts] = useState([]);
@@ -29,8 +29,14 @@ function AccountManagement() {
     if (!confirmDelete) return;
 
     try {
+      const role = getUserRole(); 
+
       const res = await fetch(`http://localhost:8080/api/users/${id}`, {
         method: "DELETE",
+        headers: {
+        "Content-Type": "application/json",
+        "role": role || "CUSTOMER", // send role header
+      },
       });
 
       if (res.ok) {

@@ -6,86 +6,158 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
   const [amount, setAmount] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("")
   const [error, setError] = useState("")
-  const [bookingAmount, setBookingAmount] = useState("")
+  const [bookingAmount, setBookingAmount] = useState(0)
+  const [alreadyPaid, setAlreadyPaid] = useState(0)
+  const [remainingBalance, setRemainingBalance] = useState(0)
 
-  // Pre-fill form if editing
+  // 🔹 On mount/edit
   useEffect(() => {
+    console.log("🔄 useEffect triggered | editingPayment:", editingPayment)
     if (editingPayment) {
       setBookingId(editingPayment.bookingCode || "")
       setAmount(editingPayment.amount || "")
       setPaymentMethod(editingPayment.paymentMethod || "")
+      setRemainingBalance(editingPayment.remainingBalance || 0)
+
+      console.log("📝 Loaded editing payment:", {
+        bookingId: editingPayment.bookingCode,
+        amount: editingPayment.amount,
+        paymentMethod: editingPayment.paymentMethod,
+        remainingBalance: editingPayment.remainingBalance
+      })
     } else {
-      // reset when adding new
       setBookingId("")
       setAmount("")
       setPaymentMethod("")
-      setBookingAmount("")
+      setBookingAmount(0)
+      setAlreadyPaid(0)
+      setRemainingBalance(0)
       setError("")
+      console.log("✨ Reset state for new payment")
     }
   }, [editingPayment])
 
-  // Fetch booking details
+  // 🔹 Fetch booking info
   const fetchBooking = async () => {
     try {
       setError("")
       if (!bookingId) return
 
-      const response = await axios.get(`http://localhost:8080/api/bookings/code/${bookingId}`)
-      const booking = response.data
+      console.log("📡 Fetching booking for:", bookingId)
+
+      const bookingRes = await axios.get(`http://localhost:8080/api/bookings/code/${bookingId}`)
+      const booking = bookingRes.data
+      console.log("✅ Booking response:", booking)
 
       if (booking && booking.totalAmount) {
         setBookingAmount(booking.totalAmount)
+
+        const paymentsRes = await axios.get(`http://localhost:8080/api/payments/booking/${bookingId}`)
+        console.log("📡 Payments response:", paymentsRes.data)
+
+        const totalPaid = paymentsRes.data.reduce((sum, p) => sum + parseFloat(p.amount), 0)
+        setAlreadyPaid(totalPaid)
+
+        const lastPayment = paymentsRes.data[paymentsRes.data.length - 1]
+        if (lastPayment?.remainingBalance !== undefined) {
+          setRemainingBalance(lastPayment.remainingBalance)
+        } else {
+          setRemainingBalance(booking.totalAmount - totalPaid)
+        }
+
+        if (totalPaid === 0) {
+          const downPayment = (booking.totalAmount * 0.3).toFixed(2)
+          setAmount(downPayment)
+          console.log("💰 First payment, auto-setting downpayment:", downPayment)
+        } else {
+          setAmount("")
+        }
       } else {
-        setBookingAmount("")
+        console.warn("⚠️ Booking not found or no amount available")
+        setBookingAmount(0)
+        setAlreadyPaid(0)
+        setRemainingBalance(0)
         setError("Booking not found or no amount available.")
       }
     } catch (err) {
-      console.error(" Error fetching booking:", err.response ? err.response.data : err.message)
-      setBookingAmount("")
+      console.error("❌ Error fetching booking:", err.response?.data || err.message)
+      setBookingAmount(0)
+      setAlreadyPaid(0)
+      setRemainingBalance(0)
       setError("Booking not found.")
     }
   }
 
+  // 🔹 Save new payment
   const handleSave = async () => {
+    console.log("💾 handleSave called with:", { bookingId, paymentMethod, amount })
+
     if (!bookingId || !paymentMethod || !amount) {
       alert("Please fill in all fields.")
       return
     }
 
-    if (parseFloat(amount) !== parseFloat(bookingAmount)) {
-      alert("The entered amount does not match the required total.")
+    const paidAmount = parseFloat(amount)
+    if (paidAmount <= 0) {
+      alert("Amount must be greater than 0.")
       return
     }
 
     try {
       const payload = {
         bookingCode: bookingId,
-        amount,
+        amount: paidAmount,
         paymentMethod,
         paymentDate: new Date().toISOString()
       }
+      console.log("📤 Saving payment payload:", payload)
 
-      let response
       if (editingPayment) {
-        // 🔹 Update existing payment
-        response = await axios.put(
-          `http://localhost:8080/api/payments/${editingPayment.id}`,
-          payload
-        )
+        await axios.put(`http://localhost:8080/api/payments/${editingPayment.id}`, payload)
         alert("Payment updated successfully!")
       } else {
-        // 🔹 Create new payment
-        response = await axios.post("http://localhost:8080/api/payments", payload)
+        const res = await axios.post("http://localhost:8080/api/payments", payload)
+        console.log("✅ Payment created response:", res.data)
+        setRemainingBalance(res.data.remainingBalance || (bookingAmount - (alreadyPaid + paidAmount)))
         alert("Payment recorded successfully!")
       }
 
-      console.log("Payment response:", response.data)
-
       fetchPayments()
       setEditingPayment(null)
+      window.location.reload()
     } catch (err) {
-      console.error(" Error saving payment:", err.response ? err.response.data : err.message)
-      alert("Failed to save payment.")
+      console.error("❌ Error saving payment:", err.response?.data || err.message)
+      alert(err.response?.data?.message || "Failed to save payment.")
+    }
+  }
+
+  // 🔹 Complete remaining payment
+  const handlePayRemaining = async () => {
+    console.log("💳 handlePayRemaining called with:", { bookingId, paymentMethod, remainingBalance })
+
+    if (!paymentMethod) {
+      alert("Please select a payment method to complete remaining payment.")
+      return
+    }
+
+    try {
+      const payload = {
+        paymentMethod,
+        remainingAmount: remainingBalance
+      }
+      console.log("📤 Completing payment payload:", payload)
+
+      const res = await axios.post(`http://localhost:8080/api/payments/complete/${bookingId}?paymentMethod=${paymentMethod}`, payload)
+      console.log("✅ Complete payment response:", res.data)
+
+      setRemainingBalance(res.data.remainingBalance || 0)
+      alert("Remaining payment completed successfully!")
+      fetchPayments()
+      setEditingPayment(null)
+      window.location.reload()
+    } catch (err) {
+      console.error("❌ Error completing payment:", err.response?.data || err.message)
+      alert(err.response?.data?.message || "Failed to complete remaining payment.")
     }
   }
 
@@ -94,16 +166,9 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
       <div className="modal-dialog modal-md modal-dialog-scrollable" role="document">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">
-              {editingPayment ? "View Payment" : "Add New Payment"}
-            </h5>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-              onClick={() => setEditingPayment(null)}
-            ></button>
+            <h5 className="modal-title">{editingPayment ? "Edit Payment" : "Add New Payment"}</h5>
+            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"
+              onClick={() => setEditingPayment(null)}></button>
           </div>
 
           <div className="modal-body">
@@ -119,10 +184,20 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
                   className={`form-control ${error ? "is-invalid" : ""}`}
                   placeholder="Enter booking code"
                   autoFocus
-                  disabled={!!editingPayment}  
+                  disabled={!!editingPayment}
                 />
                 {error && <div className="invalid-feedback">{error}</div>}
               </div>
+
+              {/* Booking Info */}
+              {bookingAmount > 0 && (
+                <div className="alert alert-info">
+                  <p className="mb-1">Booking Total: ₱{bookingAmount.toFixed(2)}</p>
+                  <p className="mb-1">Already Paid: ₱{alreadyPaid.toFixed(2)}</p>
+                  <p className="mb-1 fw-bold">Remaining Balance: ₱{remainingBalance.toFixed(2)}</p>
+                  {alreadyPaid === 0 && <p className="mb-0 text-danger fw-bold">Required Downpayment: ₱{(bookingAmount * 0.3).toFixed(2)}</p>}
+                </div>
+              )}
 
               {/* Payment Method */}
               <div className="col-12 mb-3">
@@ -131,7 +206,6 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
                   className="form-select"
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  disabled={!!editingPayment}  
                 >
                   <option value="">Select method</option>
                   <option value="Cash">Cash</option>
@@ -143,32 +217,44 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
 
               {/* Amount */}
               <div className="mb-3">
-                <label className="form-label">Amount</label>
+                <label className="form-label">{editingPayment ? "Amount Paid" : "Amount"}</label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className={`form-control`}
-                  placeholder={bookingAmount ? `Must equal ${bookingAmount}` : "Enter amount"}
-                  disabled={!!editingPayment}  
+                  className="form-control"
+                  placeholder={bookingAmount ? `Enter amount (Remaining ₱${remainingBalance.toFixed(2)})` : "Enter amount"}
+                  disabled={!!editingPayment}
                 />
               </div>
+
+              {/* Remaining Balance (only when editing) */}
+              {editingPayment && (
+                <div className="mb-3">
+                  <label className="form-label">Remaining Balance</label>
+                  <input
+                    type="number"
+                    value={remainingBalance}
+                    onChange={(e) => setRemainingBalance(e.target.value)}
+                    className="form-control"
+                    disabled
+                  />
+                </div>
+              )}
             </form>
           </div>
 
+          {/* Footer */}
           <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              data-bs-dismiss="modal"
-              onClick={() => setEditingPayment(null)}
-            >
-              Close
-            </button>
+            <button type="button" className="btn btn-outline-secondary" data-bs-dismiss="modal"
+              onClick={() => setEditingPayment(null)}>Close</button>
+
             {!editingPayment && (
-              <button type="button" onClick={handleSave} className="btn btn-primary ms-2">
-                Save Payment
-              </button>
+              <button type="button" onClick={handleSave} className="btn btn-primary ms-2">Save Payment</button>
+            )}
+
+            {editingPayment && remainingBalance > 0 &&(
+              <button type="button" onClick={handlePayRemaining} className="btn btn-success ms-2">Pay Remaining</button>
             )}
           </div>
         </div>
