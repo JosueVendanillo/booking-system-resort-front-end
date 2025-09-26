@@ -1,6 +1,6 @@
 import React,{ useState, useEffect } from 'react'
 import axios from 'axios';
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import {
     FaMapMarkerAlt,
     FaPhone,
@@ -14,9 +14,12 @@ import {
     FaStar,
     FaFacebookF, FaTwitter, FaInstagram, FaYoutube
 } from "react-icons/fa"
+import PaymentChannel from '../../components/FormModal/PaymentChannelModal';
 
 function Homepage() {
 
+    const navigate = useNavigate();
+     const [showPaymentModal, setShowPaymentModal] = useState(false);
  
 // Add these helpers at the top of your component
 const formatDate = (date) => date.toLocaleDateString("en-CA");
@@ -119,6 +122,13 @@ const handleSubmit = async (e) => {
       "http://localhost:8080/api/bookings",
       payload
     );
+
+    
+     // Save booking temporarily
+   localStorage.setItem("pendingBooking", JSON.stringify(payload));
+
+     // Open payment modal
+     setShowPaymentModal(true);
 
     console.log("Booking saved:", response.data);
     setSuccess("Booking successful!");
@@ -704,6 +714,32 @@ const handleSubmit = async (e) => {
                     </div>
                 </div>
             </section>
+
+              {/* Payment Modal */}
+            <PaymentChannel
+                show={showPaymentModal}
+                onClose={() => setShowPaymentModal(false)}
+                onPaymentDone={() => {
+                    const savedBooking = JSON.parse(localStorage.getItem("pendingBooking"));
+                    alert("Payment successful! Booking details:\n" + JSON.stringify(savedBooking, null, 2));
+                    localStorage.removeItem("pendingBooking");
+                    setShowPaymentModal(false);
+
+                    // Reset booking form
+                    setBooking({
+                        fullname: "",
+                        gender: "",
+                        adults: 1,
+                        kids: 0,
+                        unitType: "",
+                        checkInDate: getToday(),
+                        checkInTime: getNowTime(),
+                        checkOutDate: getToday(),
+                        checkOutTime: getNowTime(),
+                        customer: { email: "", contactNumber: "" }
+                    });
+                }}
+            />
         </>
     )
 }

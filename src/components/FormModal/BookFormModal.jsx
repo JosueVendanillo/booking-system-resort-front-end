@@ -135,10 +135,10 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
       return checkIn < existingCheckOut && checkOut > existingCheckIn;
     });
 
-    if (hasOverlap) {
-      alert("This booking overlaps with an existing booking for the same unit.");
-      return;
-    }
+    // if (hasOverlap) {
+    //   alert("This booking overlaps with an existing booking for the same unit.");
+    //   return;
+    // }
 
     const payload = {
       fullname: formData.fullname,
@@ -170,7 +170,17 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
         });
       }
 
-      if (!response.ok) throw new Error("Failed to save booking");
+      if (!response.ok) {
+      
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Error response:", errorData);
+        // This will show a clean alert
+        alert(
+          `Error response: ${errorData.error || "Failed to save booking"}`
+        );
+        return;
+      } 
+      // throw new Error("Failed to save booking");
 
       const savedBooking = await response.json();
 
@@ -297,6 +307,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 <label className="form-label">Select Type</label>
                 <select className="form-select" name="unitType" value={formData.unitType} onChange={handleChange}>
                   <option value="" disabled>Select Room</option>
+                  <option value="ktv-room">KTV Room</option>
                   <option value="big-cabana">Big Cabana</option>
                   <option value="small-cabana">Small Cabana</option>
                   <option value="brown-table">Brown Table</option>
