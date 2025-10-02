@@ -20,6 +20,10 @@ function Homepage() {
 
     const navigate = useNavigate();
      const [showPaymentModal, setShowPaymentModal] = useState(false);
+const [bookingCode, setBookingCode] = useState("");
+const [confirmedAmount, setConfirmedAmount] = useState(0);
+ const [downpayment, setDownpayment] = useState(0); // <-- NEW state
+
  
 // Add these helpers at the top of your component
 const formatDate = (date) => date.toLocaleDateString("en-CA");
@@ -65,12 +69,17 @@ const [booking, setBooking] = useState({
 // Automatically update checkout when check-in changes
 useEffect(() => {
   const checkIn = parseDateTimeLocal(booking.checkInDate, booking.checkInTime);
-  const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
-  setBooking((prev) => ({
-    ...prev,
-    checkOutDate,
-    checkOutTime,
-  }));
+  const checkOut = parseDateTimeLocal(booking.checkOutDate, booking.checkOutTime);
+
+  // If checkout is before/equal checkin, reset it to +1 hour
+  if (checkOut <= checkIn) {
+    const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
+    setBooking((prev) => ({
+      ...prev,
+      checkOutDate,
+      checkOutTime,
+    }));
+  }
 }, [booking.checkInDate, booking.checkInTime]);
 
 
@@ -115,14 +124,20 @@ const handleSubmit = async (e) => {
         email: booking.customer.email,
         contactNumber: booking.customer.contactNumber,
         gender: booking.customer.gender,  
-      }
+      },
     };
 
     const response = await axios.post(
       "http://localhost:8080/api/bookings",
       payload
     );
+    console.log("Booking response:", response.data);
 
+    // Save bookingCode and totalAmount
+    setBookingCode(response.data.bookingCode);
+    setConfirmedAmount(response.data.totalAmount);
+
+    setDownpayment(response.data.totalAmount * 0.3);
     
      // Save booking temporarily
    localStorage.setItem("pendingBooking", JSON.stringify(payload));
@@ -131,6 +146,10 @@ const handleSubmit = async (e) => {
      setShowPaymentModal(true);
 
     console.log("Booking saved:", response.data);
+    console.log("Booking Code: ", response.data.bookingCode);
+    console.log("Total Amount: ", response.data.totalAmount);
+    
+
     setSuccess("Booking successful!");
     alert("Booking successful!");
 
@@ -739,6 +758,9 @@ const handleSubmit = async (e) => {
                         customer: { email: "", contactNumber: "" }
                     });
                 }}
+                 bookingCode={bookingCode}
+                totalAmount={confirmedAmount}
+                 downpayment={downpayment}
             />
         </>
     )

@@ -47,7 +47,7 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
 
       const bookingRes = await axios.get(`http://localhost:8080/api/bookings/code/${bookingId}`)
       const booking = bookingRes.data
-      console.log("✅ Booking response:", booking)
+      console.log("  Booking response:", booking)
 
       if (booking && booking.totalAmount) {
         setBookingAmount(booking.totalAmount)
@@ -117,7 +117,7 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
         alert("Payment updated successfully!")
       } else {
         const res = await axios.post("http://localhost:8080/api/payments", payload)
-        console.log("✅ Payment created response:", res.data)
+        console.log("  Payment created response:", res.data)
         setRemainingBalance(res.data.remainingBalance || (bookingAmount - (alreadyPaid + paidAmount)))
         alert("Payment recorded successfully!")
       }
@@ -133,7 +133,7 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
 
   // 🔹 Complete remaining payment
   const handlePayRemaining = async () => {
-    console.log("💳 handlePayRemaining called with:", { bookingId, paymentMethod, remainingBalance })
+    console.log(" handlePayRemaining called with:", { bookingId, paymentMethod, remainingBalance })
 
     if (!paymentMethod) {
       alert("Please select a payment method to complete remaining payment.")
@@ -145,10 +145,10 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
         paymentMethod,
         remainingAmount: remainingBalance
       }
-      console.log("📤 Completing payment payload:", payload)
+      console.log(" Completing payment payload:", payload)
 
       const res = await axios.post(`http://localhost:8080/api/payments/complete/${bookingId}?paymentMethod=${paymentMethod}`, payload)
-      console.log("✅ Complete payment response:", res.data)
+      console.log("  Complete payment response:", res.data)
 
       setRemainingBalance(res.data.remainingBalance || 0)
       alert("Remaining payment completed successfully!")
@@ -156,7 +156,7 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
       setEditingPayment(null)
       window.location.reload()
     } catch (err) {
-      console.error("❌ Error completing payment:", err.response?.data || err.message)
+      console.error(" Error completing payment:", err.response?.data || err.message)
       alert(err.response?.data?.message || "Failed to complete remaining payment.")
     }
   }
