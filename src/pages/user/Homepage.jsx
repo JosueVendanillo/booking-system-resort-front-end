@@ -18,12 +18,18 @@ import PaymentChannel from '../../components/FormModal/PaymentChannelModal';
 
 function Homepage() {
 
-    const navigate = useNavigate();
-     const [showPaymentModal, setShowPaymentModal] = useState(false);
+//pricing
+const ADULT_PRICE = 300;
+const KID_PRICE = 150;
+
+
+const navigate = useNavigate();
+const [showPaymentModal, setShowPaymentModal] = useState(false);
 const [bookingCode, setBookingCode] = useState("");
 const [confirmedAmount, setConfirmedAmount] = useState(0);
- const [downpayment, setDownpayment] = useState(0); // <-- NEW state
-
+const [downpayment, setDownpayment] = useState(0); // <-- NEW state
+const [adultCount, setAdultCount] = useState(0);
+const [kidsCount, setKidsCountt] = useState(0);
  
 // Add these helpers at the top of your component
 const formatDate = (date) => date.toLocaleDateString("en-CA");
@@ -131,13 +137,26 @@ const handleSubmit = async (e) => {
       "http://localhost:8080/api/bookings",
       payload
     );
+
+        // ✅ Compute total cost (room + people)
+    const totalAmount = response.data.totalAmount || 0; // from backend
+    // const computedPeopleCost = booking.adults * ADULT_PRICE + booking.kids * KID_PRICE;
+    // const totalAmount = baseAmount + computedPeopleCost;
+    const kids = booking.kids || 0;
+    const adults = booking.adults || 0;
+
+
+
     console.log("Booking response:", response.data);
 
     // Save bookingCode and totalAmount
     setBookingCode(response.data.bookingCode);
-    setConfirmedAmount(response.data.totalAmount);
-
-    setDownpayment(response.data.totalAmount * 0.3);
+    setConfirmedAmount(totalAmount);
+    setDownpayment(totalAmount * 0.3);
+    // setPeopleCost(computedPeopleCost);
+    setAdultCount(adults);
+    setKidsCountt(kids);
+    
     
      // Save booking temporarily
    localStorage.setItem("pendingBooking", JSON.stringify(payload));
@@ -147,7 +166,8 @@ const handleSubmit = async (e) => {
 
     console.log("Booking saved:", response.data);
     console.log("Booking Code: ", response.data.bookingCode);
-    console.log("Total Amount: ", response.data.totalAmount);
+    console.log("Total Amount: ", totalAmount);
+    // console.log("People Cost: ", computedPeopleCost);
     
 
     setSuccess("Booking successful!");
@@ -176,8 +196,6 @@ const handleSubmit = async (e) => {
     setLoading(false);
   }
 };
-
-    
 
     return (
         <>
@@ -707,9 +725,9 @@ const handleSubmit = async (e) => {
                                                <td>500</td>
                                                </tr>
                                                <tr>
-                                               <td>Family Room</td>
+                                               <td>Couple Room</td>
                                                <td>6-8 pax</td>
-                                               <td>5,500</td>
+                                               <td>3,000</td>
                                                </tr>
                                                <tr>
                                                <td>Family Room</td>
@@ -733,6 +751,105 @@ const handleSubmit = async (e) => {
                     </div>
                 </div>
             </section>
+
+
+            {/* Feedback Section */}
+<section id="feedback" className="py-5 bg-light">
+  <div className="container py-4">
+    <div className="text-center mb-5">
+      <h2 className="h1 fw-bold mb-3">We Value Your Feedback</h2>
+      <p className="text-muted mx-auto fs-5" style={{ maxWidth: "800px" }}>
+        Share your thoughts and help us improve your experience at Blue Belle Hotel & Resort.
+      </p>
+      <div className="divider-primary mx-auto mt-3"></div>
+    </div>
+
+    <div className="row justify-content-center">
+      <div className="col-lg-8">
+        <form
+              onSubmit={async (e) => {
+            e.preventDefault();
+
+            const formData = {
+              name: e.target.name.value,
+              email: e.target.email.value,
+              rating: e.target.rating.value,
+              message: e.target.message.value,
+            };
+
+            try {
+              const response = await axios.post("http://localhost:8080/api/feedback", formData);
+              if (response.status === 200 || response.status === 201) {
+                alert("Thank you for your feedback!");
+                e.target.reset();
+              } else {
+                alert("Something went wrong. Please try again later.");
+              }
+            } catch (error) {
+              console.error("Error submitting feedback:", error);
+              alert("Failed to send feedback. Please check your connection or try again later.");
+            }
+          }}
+          className="card shadow-lg border-0 p-4 rounded-4 bg-white"
+        >
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label className="form-label fw-medium">Name</label>
+              <input
+                type="text"
+                name="name"
+                className="form-control"
+                placeholder="Your name"
+                required
+              />
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label fw-medium">Email</label>
+              <input
+                type="email"
+                name="email"
+                className="form-control"
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+
+            <div className="col-12">
+              <label className="form-label fw-medium">Rating</label>
+              <select name="rating" className="form-select" required>
+                <option value="">Select rating</option>
+                <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                <option value="4">⭐⭐⭐⭐ Good</option>
+                <option value="3">⭐⭐⭐ Average</option>
+                <option value="2">⭐⭐ Poor</option>
+                <option value="1">⭐ Very Poor</option>
+              </select>
+            </div>
+
+            <div className="col-12">
+              <label className="form-label fw-medium">Message</label>
+              <textarea
+                name="message"
+                rows="4"
+                className="form-control"
+                placeholder="Write your feedback here..."
+                required
+              ></textarea>
+            </div>
+
+            <div className="col-12 text-center">
+              <button type="submit" className="btn btn-primary px-5 py-2 rounded-pill fw-semibold">
+                Submit Feedback
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
 
               {/* Payment Modal */}
             <PaymentChannel
@@ -761,6 +878,9 @@ const handleSubmit = async (e) => {
                  bookingCode={bookingCode}
                 totalAmount={confirmedAmount}
                  downpayment={downpayment}
+                 adults={adultCount}
+                kids={kidsCount}
+                // peopleCost={peopleCost}
             />
         </>
     )

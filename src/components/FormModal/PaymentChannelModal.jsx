@@ -3,13 +3,22 @@ import gcashQR from "../../assets/images/gcash-qr.jpg";
 import bpibankQR from "../../assets/images/bpi-bank-qr.jpg";
 import axios from 'axios';
 
-function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalAmount,downpayment }) {
+function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalAmount,downpayment,adults, kids }) {
   if (!show) return null; // Don't render unless modal is open
 
+  const ADULT_PRICE = 300; // Example price per adult
+  const KID_PRICE = 150; // Example price per kid
   const [selectedMethod, setSelectedMethod] = useState(""); // track selected method
+  const [peopleCost, setPeopleCost] = useState((adults * ADULT_PRICE) + (kids * KID_PRICE));
+  const [adultCount, setAdultCount] = useState(adults * ADULT_PRICE);
+  const [kidsCount, setKidsCountt] = useState(kids * KID_PRICE);
+
+  //  console.log("Guest Total Amount:", peopleCost);
 
 
   console.log("Booking Code in Modal:", bookingCode);
+  console.log("Adults in Modal:", adults);
+  console.log("Kids in Modal:", kids);
   console.log("Total Amount in Modal:", totalAmount);
   console.log("Downpayment in Modal:", downpayment);
   console.log("Selected Method:", selectedMethod);
@@ -47,6 +56,9 @@ const handleConfirm = async () => {
              {/* Booking Summary */}
             <div className="alert alert-info text-center mb-4">
               <h6>Your Booking Code: <strong>{bookingCode}</strong></h6>
+              <h6><strong>Total Adult Price:</strong> ₱{adultCount}</h6>
+              <h6><strong>Total Kids Price:</strong> ₱{kidsCount}</h6>
+               <h6><strong>Total Entrance Price:</strong> ₱{peopleCost}</h6>
               <h6>Total Amount: <strong>₱{Number(totalAmount).toLocaleString()}</strong></h6>
               <p className="mb-0">Minimum Downpayment (30%): <strong>₱{downpayment.toLocaleString()}</strong></p>
             </div>
