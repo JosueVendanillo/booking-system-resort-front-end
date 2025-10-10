@@ -50,14 +50,14 @@ function AdminSidebar() {
                 </NavLink>
 
                 <NavLink
-                    to="/admin/amenity"
+                    to="/admin/feedback"
                     className={({ isActive }) =>
                         `menu-item ${isActive ? 'active' : ''}`
                     }
                 >
                     <div className="menu-link">
                         <i className="menu-icon tf-icons bx bxs-school"></i>
-                        <div data-i18n="Basic">Amenities Management</div>
+                        <div data-i18n="Basic">Feedback Management</div>
                     </div>
                 </NavLink>
 
