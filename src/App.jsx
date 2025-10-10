@@ -4,7 +4,6 @@ import UserLayout from './layouts/UserLayout';
 import Dashboard from './pages/admin/Dashboard';
 import AccountManagement from './pages/admin/AccountManagement';
 import BookManagement from './pages/admin/BookManagement';
-import AmenityManagement from './pages/admin/AmenityManagement';
 import CustomerManagement from './pages/admin/CustomerManagement';
 import PaymentManagement from './pages/admin/PaymentManagement';
 import Homepage from './pages/user/Homepage';
@@ -12,6 +11,7 @@ import Gallery from './pages/user/Gallery';
 import Login from './pages/user/Login';
 import Register from './pages/user/Register';
 import RoomInventory from './pages/admin/RoomManagement';
+import FeedbackManagement from './pages/admin/FeedbackManagement';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -20,7 +20,8 @@ const router = createBrowserRouter(
         <Route path="/admin/dashboard" element={<Dashboard />} />
         <Route path="/admin/account" element={<AccountManagement />} />
         <Route path="/admin/book" element={<BookManagement />} />
-        <Route path="/admin/amenity" element={<AmenityManagement />} />
+        {/* <Route path="/admin/amenity" element={<AmenityManagement />} /> */}
+        <Route path="/admin/feedback" element={<FeedbackManagement />} />
         <Route path="/admin/customer" element={<CustomerManagement />} />
         <Route path="/admin/payment" element={<PaymentManagement />} />
         <Route path="/admin/room" element={<RoomInventory/>} />
