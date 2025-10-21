@@ -1,8 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { getUser, getUserRole } from '../../utils/auth';
+import Homepage from '../../pages/user/Homepage';
 
 function UserNavbar() {
     const [activeSection, setActiveSection] = useState('');
+    const [user, setUser] = useState(null);
+    const [userRole, setRole] = useState(null);
+
+
+    useEffect(() => {
+            const loggedUser = getUser();
+            if (loggedUser) {
+              setUser(loggedUser);
+        }
+    
+    
+     const userRole = getUserRole();
+        if (userRole) {
+          setRole(userRole);
+        } else {
+          setRole("GUEST");
+        }
+          }, []);
 
     useEffect(() => {
     const sections = document.querySelectorAll('section');
@@ -53,9 +73,45 @@ function UserNavbar() {
                             <a href="/#footer" className="nav-link px-3">Contact</a>
                         </li>
                         <li>
-                            <NavLink to="/login" className="btn btn-primary ms-xl-3">Book Now</NavLink>
+                            {/* <NavLink to="/#booking-cta" className="btn btn-primary ms-xl-3">Book Now</NavLink> */}
+                            <a className="btn btn-primary ms-xl-3" href="">Book Now</a>
                         </li>
+  
                     </ul>
+                                       <div className="nav-item navbar-dropdown dropdown-user dropdown">
+                                            <a className="nav-link dropdown-toggle hide-arrow hstack g-5" href="javascript:void(0);"
+                                                data-bs-toggle="dropdown">
+                                                <span className="mx-3">|</span>
+                    
+                                                <span>{user?. fullName ||user?. email || "Guest"}</span>
+                                            </a>
+                                            <ul className="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a className="dropdown-item" href="#">
+                                                        <div className="d-flex">
+                                                            <div className="flex-shrink-0 me-3">
+                                                                |
+                                                            </div>
+                                                            <div className="flex-grow-1">
+                                                                <span
+                                                                    className="fw-semibold d-block">{user?. fullName ||user?. email || "Guest"}</span>
+                                                                <small className="text-muted">{userRole}</small>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <div className="dropdown-divider"></div>
+                                                </li>
+                    
+                                                <li>
+                                                    <NavLink to="/login" className="dropdown-item">
+                                                        <i className="bx bx-power-off me-2"></i>
+                                                        <span className="align-middle">Log Out</span>
+                                                    </NavLink>
+                                                </li>
+                                            </ul>
+                                        </div>
                 </div>
             </div>
         </nav>

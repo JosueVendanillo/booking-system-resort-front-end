@@ -111,8 +111,9 @@ const handleConfirm = async () => {
                   onChange={(e) => setSelectedMethod(e.target.value)}
                   className="form-check-input me-2"
                 />
-                <h5>Pay at Counter</h5>
-                <p>You can pay directly when you arrive at the resort.</p>
+
+                <h5>Enter Reference No.</h5>
+                <p>Please enter reference number of your online transactions.</p>
               </div>
             </div>
           </div>

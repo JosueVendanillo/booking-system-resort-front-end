@@ -170,6 +170,7 @@ const handleSubmit = async (e) => {
     // console.log("People Cost: ", computedPeopleCost);
     
 
+    confirm("Are you sure you want to submit the booking?");
     setSuccess("Booking successful!");
     alert("Booking successful!");
 
@@ -545,7 +546,7 @@ const handleSubmit = async (e) => {
                                             required
                                             />
                                         </div>
-                                        <div className="col-md-6 mb-3">
+                                        {/* <div className="col-md-6 mb-3">
                                             <label htmlFor="checkInTime" className="form-label fw-medium">Check-in Time</label>
                                             <input
                                             type="time"
@@ -557,7 +558,7 @@ const handleSubmit = async (e) => {
                                             min={booking.checkInDate === getToday() ? getNowTime() : "00:00"}
                                             required
                                             />
-                                        </div>
+                                        </div> */}
                                         <div className="col-md-6 mb-3">
                                             <label htmlFor="checkOutDate" className="form-label fw-medium">Check-out Date</label>
                                             <input
@@ -571,7 +572,7 @@ const handleSubmit = async (e) => {
                                             required
                                             />
                                         </div>
-                                        <div className="col-md-6 mb-3">
+                                        {/* <div className="col-md-6 mb-3">
                                             <label htmlFor="checkOutTime" className="form-label fw-medium">Check-out Time</label>
                                             <input
                                             type="time"
@@ -583,7 +584,7 @@ const handleSubmit = async (e) => {
                                             min={booking.checkOutDate === booking.checkInDate ? booking.checkInTime : "00:00"}
                                             required
                                             />
-                                        </div>
+                                        </div> */}
                                         </div>
 
                                             <div className="col-md-6">
@@ -739,6 +740,11 @@ const handleSubmit = async (e) => {
                                                </div>
                                                </div>
                                                </section>
+
+                                               <div>
+                                                <input type="checkbox" name="" id="" />
+                                                <label className="ms-2">I agree to the <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer">Terms and Conditions</a></label>
+                                               </div>
                                         <div className="col-12">
                                             <button type="submit" className="btn btn-primary w-100 py-2 rounded-pill">
                                                 Book Now
