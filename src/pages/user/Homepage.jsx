@@ -22,6 +22,12 @@ function Homepage() {
 const ADULT_PRICE = 300;
 const KID_PRICE = 150;
 
+const [roomCapacities, setRoomCapacities] = useState([]);
+const [agreed, setAgreed] = useState(false);
+const [showModal, setShowModal] = useState(false);
+const [roomType, setRoomType] = useState("");
+const [maxCapacity, setMaxCapacity] = useState("");
+
 
 const navigate = useNavigate();
 const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -110,11 +116,43 @@ useEffect(() => {
     }));
   };
 
+
+  
+ useEffect(() => {
+    const fetchRoomCapacities = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/rooms/room-capacities");
+        setRoomCapacities(response.data);
+      } catch (error) {
+        console.error("Error fetching room capacities:", error);
+      }
+    };
+
+    fetchRoomCapacities();
+  }, []);
+
+
+  useEffect(() => {
+  if (booking.unitType && roomCapacities.length > 0) {
+    const match = roomCapacities.find(([type]) => type === booking.unitType);
+    setMaxCapacity(match ? match[1] : null);
+  }
+}, [booking.unitType, roomCapacities]);
+
 const handleSubmit = async (e) => {
   e.preventDefault();
+
+    // ✅ Ask for confirmation first
+  const userConfirmed = window.confirm("Are you sure you want to submit the booking?");
+  if (!userConfirmed) {
+    // Stop submission if user clicks "Cancel"
+    return;
+  }
+  
   setLoading(true);
   setSuccess("");
   setError("");
+
 
   try {
     // Combine date + time into LocalDateTime strings
@@ -170,7 +208,7 @@ const handleSubmit = async (e) => {
     // console.log("People Cost: ", computedPeopleCost);
     
 
-    confirm("Are you sure you want to submit the booking?");
+
     setSuccess("Booking successful!");
     alert("Booking successful!");
 
@@ -586,102 +624,137 @@ const handleSubmit = async (e) => {
                                             />
                                         </div> */}
                                         </div>
+{/* ADULT COUNTER */}
+<div className="col-md-6">
+  <label htmlFor="adults" className="form-label fw-medium">Adults</label>
+  <div className="input-group">
+    <button
+      type="button"
+      className="btn btn-outline-secondary"
+      onClick={() =>
+        setBooking((prev) => ({
+          ...prev,
+          adults: Math.max(1, (parseInt(prev.adults) || 1) - 1),
+        }))
+      }
+    >
+      -
+    </button>
+    <input
+      type="text"
+      className="form-control text-center"
+      name="adults"
+      value={booking.adults || 1}
+      readOnly
+    />
+    <button
+      type="button"
+      className="btn btn-outline-secondary"
+      onClick={() => {
+        if (!booking.unitType) {
+          alert("Please select a room type first.");
+          return;
+        }
 
-                                            <div className="col-md-6">
-                                            <label htmlFor="adults" className="form-label fw-medium">Adult</label>
-                                            <div className="input-group">
-                                                <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={() =>
-                                                    setBooking((prev) => ({
-                                                    ...prev,
-                                                    adults: Math.max(1, (parseInt(prev.adults) || 1) - 1),
-                                                    }))
-                                                }
-                                                >
-                                                -
-                                                </button>
-                                                <input
-                                                type="text"
-                                                className="form-control text-center"
-                                                name="adults"
-                                                value={booking.adults || 1}
-                                                readOnly
-                                                />
-                                                <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={() =>
-                                                    setBooking((prev) => ({
-                                                    ...prev,
-                                                    adults: Math.min(20, (parseInt(prev.adults) || 1) + 1),
-                                                    }))
-                                                }
-                                                >
-                                                +
-                                                </button>
-                                            </div>
-                                            </div>
+        const totalGuests = parseInt(booking.adults || 0) + parseInt(booking.kids || 0) + 1;
+        if (maxCapacity && totalGuests > maxCapacity) {
+          alert(`This room can only accommodate up to ${maxCapacity} guests.`);
+          return;
+        }
 
-                                            <div className="col-md-6">
-                                            <label htmlFor="kids" className="form-label fw-medium">Kids</label>
-                                            <div className="input-group">
-                                                <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={() =>
-                                                    setBooking((prev) => ({
-                                                    ...prev,
-                                                    kids: Math.max(0, (parseInt(prev.kids) || 0) - 1),
-                                                    }))
-                                                }
-                                                >
-                                                -
-                                                </button>
-                                                <input
-                                                type="text"
-                                                className="form-control text-center"
-                                                name="kids"
-                                                value={booking.kids || 0}
-                                                readOnly
-                                                />
-                                                <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={() =>
-                                                    setBooking((prev) => ({
-                                                    ...prev,
-                                                    kids: Math.min(20, (parseInt(prev.kids) || 0) + 1),
-                                                    }))
-                                                }
-                                                >
-                                                +
-                                                </button>
-                                            </div>
-                                            </div>
+        setBooking((prev) => ({
+          ...prev,
+          adults: (parseInt(prev.adults) || 0) + 1,
+        }));
+      }}
+    >
+      +
+    </button>
+  </div>
+</div>
 
-                                        <div className="col-md-6">
-                                            <label htmlFor="unitType" className="form-label fw-medium">Room Type</label>
-                                            <select
-                                            className="form-select"
-                                            id="unitType"
-                                            name="unitType"
-                                            value={booking.unitType}
-                                            onChange={handleChange}
-                                            required
-                                            >
-                                            <option value="" disabled>Select Room</option>
-                                            <option value="ktv-room">KTV Room</option>
-                                            <option value="big-cabana">Big Cabana</option>
-                                            <option value="small-cabana">Small Cabana</option>
-                                            <option value="brown-table">Brown Table</option>
-                                            <option value="colored-table">Colored Table</option>
-                                            <option value="garden-table">Garden Table</option>
-                                            <option value="couple-room">Couple Room (For Private)</option>
-                                            <option value="family-room">Family Room (For Private)</option>
-                                            </select>
-                                        </div>
+{/* KIDS COUNTER */}
+<div className="col-md-6">
+  <label htmlFor="kids" className="form-label fw-medium">Kids</label>
+  <div className="input-group">
+    <button
+      type="button"
+      className="btn btn-outline-secondary"
+      onClick={() =>
+        setBooking((prev) => ({
+          ...prev,
+          kids: Math.max(0, (parseInt(prev.kids) || 0) - 1),
+        }))
+      }
+    >
+      -
+    </button>
+    <input
+      type="text"
+      className="form-control text-center"
+      name="kids"
+      value={booking.kids || 0}
+      readOnly
+    />
+    <button
+      type="button"
+      className="btn btn-outline-secondary"
+      onClick={() => {
+        if (!booking.unitType) {
+          alert("Please select a room type first.");
+          return;
+        }
+
+        const totalGuests = parseInt(booking.adults || 0) + parseInt(booking.kids || 0) + 1;
+        if (maxCapacity && totalGuests > maxCapacity) {
+          alert(`This room can only accommodate up to ${maxCapacity} guests.`);
+          return;
+        }
+
+        setBooking((prev) => ({
+          ...prev,
+          kids: (parseInt(prev.kids) || 0) + 1,
+        }));
+      }}
+    >
+      +
+    </button>
+  </div>
+</div>
+
+{/* ROOM TYPE SELECTOR */}
+<div className="col-md-6">
+  <label htmlFor="unitType" className="form-label fw-medium">Room Type</label>
+  <select
+    className="form-select"
+    id="unitType"
+    name="unitType"
+    value={booking.unitType}
+    onChange={(e) => {
+      handleChange(e); // keep your existing handler
+      // update maxCapacity based on selected room
+      const match = roomCapacities.find(([type]) => type === e.target.value);
+      setMaxCapacity(match ? match[1] : null);
+    }}
+    required
+  >
+    <option value="" disabled>Select Room</option>
+    <option value="ktv-room">KTV Room</option>
+    <option value="big-cabana">Big Cabana</option>
+    <option value="small-cabana">Small Cabana</option>
+    <option value="brown-table">Brown Table</option>
+    <option value="colored-table">Colored Table</option>
+    <option value="garden-table">Garden Table</option>
+    <option value="couple-room">Couple Room (Private)</option>
+    <option value="family-room">Family Room (Private)</option>
+  </select>
+
+  {maxCapacity && (
+    <small className="text-muted">
+      This room allows up to <strong>{maxCapacity}</strong> guests.
+    </small>
+  )}
+</div>
                                         <section id="price-list" class="py-5 bg-light">
                                          <div class="container">
                                              <h2 class="text-center mb-4">Cottage Price List</h2>
@@ -741,10 +814,111 @@ const handleSubmit = async (e) => {
                                                </div>
                                                </section>
 
-                                               <div>
-                                                <input type="checkbox" name="" id="" />
-                                                <label className="ms-2">I agree to the <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer">Terms and Conditions</a></label>
-                                               </div>
+    {/* --- Terms and Conditions --- */}
+                        <div className="col-12 mt-3">
+                            <div className="form-check">
+                                <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    id="agree"
+                                    checked={agreed}
+                                    onChange={() => setAgreed(!agreed)}
+                                    required
+                                />
+                                <label className="form-check-label ms-2" htmlFor="agree">
+                                    I agree to the{" "}
+                                    <button
+                                        type="button"
+                                        className="btn btn-link p-0 text-primary"
+                                        onClick={() => setShowModal(true)}
+                                    >
+                                        Terms and Conditions
+                                    </button>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* --- Terms and Conditions Modal --- */}
+{showModal && (
+    <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div className="modal-content">
+                <div className="modal-header bg-primary text-white">
+                    <h5 className="modal-title fw-semibold">Terms and Conditions</h5>
+                    <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
+                </div>
+                <div className="modal-body" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                    <h4 className="text-center text-primary mb-3">Welcome to Bluebelle Resort!</h4>
+                    <p>Please read these Terms and Conditions carefully before making a reservation or using any of our services. By confirming a booking, you agree to comply with and be bound by these terms.</p>
+
+                    <h5 className="mt-4">1. Reservation and Payment</h5>
+                    <ul>
+                        <li>Reservations can be made directly through our website, by phone, or via authorized travel partners.</li>
+                        <li>A valid booking confirmation and payment are required to secure your stay.</li>
+                        <li>A deposit of <strong>30%</strong> of the total stay is required at the time of reservation.</li>
+                        <li>The remaining balance must be settled upon check-in or before arrival, depending on the booking policy.</li>
+                        <li>Accepted payment methods include cash, credit/debit cards, and bank transfers.</li>
+                    </ul>
+
+                    <h5 className="mt-4">2. Cancellation and Refund Policy</h5>
+                    <ul>
+                        <li>Cancellations made at least 7 days before arrival are eligible for a full refund.</li>
+                        <li>Cancellations made less than 7 days before check-in will incur a 50% charge of the total booking.</li>
+                        <li>No-shows or early departures will be charged the full amount of the reservation.</li>
+                        <li>Refunds, if applicable, will be processed within 7–14 business days.</li>
+                    </ul>
+
+                    <h5 className="mt-4">3. Check-In and Check-Out</h5>
+                    <ul>
+                        <li><strong>Check-in time:</strong> 2:00 PM</li>
+                        <li><strong>Check-out time:</strong> 12:00 PM</li>
+                        <li>Early check-in or late check-out may be available upon request and subject to additional charges.</li>
+                        <li>Guests must present a valid government-issued ID and booking confirmation upon check-in.</li>
+                    </ul>
+
+                    <h5 className="mt-4">4. Resort Rules and Guest Conduct</h5>
+                    <ul>
+                        <li>Guests are expected to behave respectfully toward staff, other guests, and resort property.</li>
+                        <li>Smoking is only permitted in designated areas.</li>
+                        <li>Pets are not allowed on the premises.</li>
+                        <li>The resort reserves the right to refuse service or evict any guest who violates these rules without a refund.</li>
+                    </ul>
+
+                    <h5 className="mt-4">5. Liability</h5>
+                    <ul>
+                        <li>The resort is not liable for loss, theft, or damage to personal belongings.</li>
+                        <li>Guests are responsible for any damage caused to resort property during their stay.</li>
+                        <li>The resort shall not be held responsible for injuries, accidents, or delays caused by circumstances beyond our control (e.g., natural disasters, transportation issues, government restrictions).</li>
+                    </ul>
+
+                    <h5 className="mt-4">6. Privacy Policy</h5>
+                    <ul>
+                        <li>All personal information collected during booking is kept confidential and used only for reservation and service purposes.</li>
+                        <li>We do not share your data with third parties except as required by law.</li>
+                    </ul>
+
+                    <h5 className="mt-4">7. Force Majeure</h5>
+                    <p>In case of events such as natural disasters, pandemics, or government restrictions, the resort reserves the right to cancel or modify reservations without liability.</p>
+
+                    <h5 className="mt-4">8. Governing Law</h5>
+                    <p>These Terms and Conditions are governed by and construed in accordance with the laws of the Republic of the Philippines.</p>
+
+                    <h5 className="mt-4">9. Contact Us</h5>
+                    <p>
+                        For questions, changes, or cancellations, please contact us at:<br />
+                        📞 <strong>(+63) 46 123 4567</strong><br />
+                        📧 <strong>reservations@bluebelleresort.com</strong><br />
+                        📍 <strong>Paliparan Road, Dasmariñas, Philippines</strong>
+                    </p>
+                </div>
+                <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+)}
+
                                         <div className="col-12">
                                             <button type="submit" className="btn btn-primary w-100 py-2 rounded-pill">
                                                 Book Now

@@ -12,7 +12,7 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
   const [peopleCost, setPeopleCost] = useState((adults * ADULT_PRICE) + (kids * KID_PRICE));
   const [adultCount, setAdultCount] = useState(adults * ADULT_PRICE);
   const [kidsCount, setKidsCountt] = useState(kids * KID_PRICE);
-
+  const [referenceNumber, setReferenceNumber] = useState("");
   //  console.log("Guest Total Amount:", peopleCost);
 
 
@@ -30,6 +30,7 @@ const handleConfirm = async () => {
       bookingCode: bookingCode,
       amount: downpayment,
       paymentMethod: selectedMethod,
+      referenceNumber: referenceNumber,
       paymentDate: new Date().toISOString()
     };
 
@@ -102,21 +103,22 @@ const handleConfirm = async () => {
                   style={{ width: "200px", marginTop: "10px" }} 
                 />
               </div>
-              <div className="list-group-item">
-                  <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="Counter"
-                  checked={selectedMethod === "Counter"}
-                  onChange={(e) => setSelectedMethod(e.target.value)}
-                  className="form-check-input me-2"
-                />
-
+            <div className="list-group-item">
                 <h5>Enter Reference No.</h5>
+                <input
+                  type="text"
+                  name="referenceNumber"
+                  placeholder="Enter Reference No."
+                  className="form-control mt-2"
+                  value={referenceNumber} // ✅ controlled input
+                  onChange={(e) => setReferenceNumber(e.target.value)} // ✅ update state
+                />
                 <p>Please enter reference number of your online transactions.</p>
               </div>
             </div>
           </div>
+
+          
           <div className="modal-footer">
               <button className="btn btn-secondary rounded-pill" onClick={onClose}>
               Cancel

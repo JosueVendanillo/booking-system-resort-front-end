@@ -9,22 +9,37 @@ function UserNavbar() {
     const [userRole, setRole] = useState(null);
 
 
-    useEffect(() => {
-            const loggedUser = getUser();
-            if (loggedUser) {
-              setUser(loggedUser);
-        }
-    
-    
-     const userRole = getUserRole();
-        if (userRole) {
-          setRole(userRole);
-        } else {
-          setRole("GUEST");
-        }
-          }, []);
 
-    useEffect(() => {
+  // ✅ Load user initially and whenever login/logout occurs
+  useEffect(() => {
+    const loadUser = () => {
+      const loggedUser = getUser();
+      const role = getUserRole();
+
+      if (loggedUser) {
+        setUser(loggedUser);
+        setRole(role);
+      } else {
+        setUser(null);
+        setRole('GUEST');
+      }
+    };
+
+    // Initial load
+    loadUser();
+
+    // Listen for both localStorage (other tabs) and custom userChange events (same tab)
+    window.addEventListener('storage', loadUser);
+    window.addEventListener('userChange', loadUser);
+
+    return () => {
+      window.removeEventListener('storage', loadUser);
+      window.removeEventListener('userChange', loadUser);
+    };
+  }, []);
+
+  // ✅ Observe active section (unchanged)
+  useEffect(() => {
     const sections = document.querySelectorAll('section');
     const observer = new IntersectionObserver(
       (entries) => {
@@ -43,6 +58,18 @@ function UserNavbar() {
       sections.forEach((section) => observer.unobserve(section));
     };
   }, []);
+
+  // ✅ Logout handler
+  const handleLogout = () => {
+    setUser(null);
+    setRole('GUEST');
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    window.dispatchEvent(new Event('userChange')); // 🔥 notify all listeners
+    window.location.href = '/login';
+  };
+
 
     return (
          <nav className="navbar navbar-expand-xl bg-white shadow sticky-top">
@@ -78,40 +105,43 @@ function UserNavbar() {
                         </li>
   
                     </ul>
-                                       <div className="nav-item navbar-dropdown dropdown-user dropdown">
-                                            <a className="nav-link dropdown-toggle hide-arrow hstack g-5" href="javascript:void(0);"
-                                                data-bs-toggle="dropdown">
-                                                <span className="mx-3">|</span>
-                    
-                                                <span>{user?. fullName ||user?. email || "Guest"}</span>
-                                            </a>
-                                            <ul className="dropdown-menu dropdown-menu-end">
-                                                <li>
-                                                    <a className="dropdown-item" href="#">
-                                                        <div className="d-flex">
-                                                            <div className="flex-shrink-0 me-3">
-                                                                |
-                                                            </div>
-                                                            <div className="flex-grow-1">
-                                                                <span
-                                                                    className="fw-semibold d-block">{user?. fullName ||user?. email || "Guest"}</span>
-                                                                <small className="text-muted">{userRole}</small>
-                                                            </div>
-                                                        </div>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <div className="dropdown-divider"></div>
-                                                </li>
-                    
-                                                <li>
-                                                    <NavLink to="/login" className="dropdown-item">
-                                                        <i className="bx bx-power-off me-2"></i>
-                                                        <span className="align-middle">Log Out</span>
-                                                    </NavLink>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                        {/* ✅ Only show this dropdown if user is logged in */}
+          {user ? (
+            <div className="nav-item navbar-dropdown dropdown-user dropdown">
+              <a
+                className="nav-link dropdown-toggle hide-arrow hstack g-5"
+                href="javascript:void(0);"
+                data-bs-toggle="dropdown"
+              >
+                <span className="mx-3">|</span>
+                <span>{user?.fullName || user?.email}</span>
+              </a>
+              <ul className="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a className="dropdown-item" href="#">
+                    <div className="d-flex">
+                      <div className="flex-shrink-0 me-3">|</div>
+                      <div className="flex-grow-1">
+                        <span className="fw-semibold d-block">
+                          {user?.fullName || user?.email}
+                        </span>
+                        <small className="text-muted">{userRole}</small>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <div className="dropdown-divider"></div>
+                </li>
+                <li>
+                  <button onClick={handleLogout} className="dropdown-item">
+                    <i className="bx bx-power-off me-2"></i>
+                    <span className="align-middle">Log Out</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+          ) : null}
                 </div>
             </div>
         </nav>

@@ -230,7 +230,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
 
               {/* User Select */}
               <div className="col-12 mb-3">
-                <label className="form-label">Select User</label>
+                <label className="form-label">Fullname</label>
                   <input
                     className="form-control"
                     name="fullname"
@@ -247,40 +247,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 </select> */}
               </div>
 
-              {/* Email */}
-            <div className="col-6 mb-3">
-              <label className="form-label">Email</label>
-              <input
-                className="form-control"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={!!editingBooking} // Disable if editing
-              />
-                {editingBooking && (
-                <small className="text-muted">
-                  To update email, go to Customer Management.
-                </small>
-              )}
-            </div>
 
-            {/* Contact */}
-          <div className="col-6 mb-3">
-            <label className="form-label">Contact Number</label>
-            <input
-              className="form-control"
-              name="contactNumber"
-              value={formData.contactNumber}
-              onChange={handleChange}
-              disabled={!!editingBooking} // Disable if editing
-            />
-              {editingBooking && (
-                <small className="text-muted">
-                  To update contact number, go to Customer Management.
-                </small>
-              )}
-          </div>
 
               {/* Adults */}
               <div className="col-6 mb-3">
@@ -324,7 +291,9 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Date</label>
-                    <input className="form-control" type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} min={getToday()} disabled={!!editingBooking} />
+                    <input className="form-control" type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} min={getToday()} 
+                    // disabled={!!editingBooking} 
+                    />
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Time</label>
@@ -333,7 +302,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                         ? getNowTime()
                         : "00:00"
                     } 
-                    disabled={!!editingBooking} // Disable if editing
+                    // disabled={!!editingBooking} // Disable if editing
                     />
                   </div>
                 </div>
