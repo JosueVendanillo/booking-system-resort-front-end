@@ -156,7 +156,7 @@ function BookManagement() {
                             <button
                               type="button"
                               className="btn btn-danger me-2"
-                              onClick={() => handleDelete(b.bookingCode)}
+                              onClick={() => handleDelete(b.id)}
                             >
                               <i className="bx bx-trash me-1"></i>Delete
                             </button>
@@ -164,7 +164,7 @@ function BookManagement() {
                             {/* Hide toggle */}
                             <button
                               className="btn btn-light border"
-                              onClick={() => toggleActions(b.bookingCode)}
+                              onClick={() => toggleActions(b.id)}
                             >
                               <strong>×</strong>
                             </button>
@@ -183,7 +183,7 @@ function BookManagement() {
                             <button
                               type="button"
                               className="btn btn-secondary me-2"
-                              onClick={() => console.log("Checkout", b.id)}
+                              onClick={() => console.log("Checkout", b.bookingCode)}
                             >
                               Checkout
                             </button>

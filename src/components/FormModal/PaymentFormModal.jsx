@@ -9,6 +9,7 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
   const [bookingAmount, setBookingAmount] = useState(0)
   const [alreadyPaid, setAlreadyPaid] = useState(0)
   const [remainingBalance, setRemainingBalance] = useState(0)
+  const [referenceNumber, setReferenceNumber] = useState("")
 
   // 🔹 On mount/edit
   useEffect(() => {
@@ -108,7 +109,8 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
         bookingCode: bookingId,
         amount: paidAmount,
         paymentMethod,
-        paymentDate: new Date().toISOString()
+        paymentDate: new Date().toISOString(),
+        referenceNumber: paymentMethod === "Cash" ? "CASH PAYMENT" : referenceNumber
       }
       console.log("📤 Saving payment payload:", payload)
 
@@ -133,7 +135,7 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
 
   // 🔹 Complete remaining payment
   const handlePayRemaining = async () => {
-    console.log(" handlePayRemaining called with:", { bookingId, paymentMethod, remainingBalance })
+    console.log(" handlePayRemaining called with:", { bookingId, paymentMethod, remainingBalance, referenceNumber })
 
     if (!paymentMethod) {
       alert("Please select a payment method to complete remaining payment.")
@@ -143,11 +145,15 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
     try {
       const payload = {
         paymentMethod,
-        remainingAmount: remainingBalance
+        remainingAmount: remainingBalance,
+        referenceNumber: paymentMethod === "Cash" ? "CASH PAYMENT" : referenceNumber
       }
       console.log(" Completing payment payload:", payload)
 
-      const res = await axios.post(`http://localhost:8080/api/payments/complete/${bookingId}?paymentMethod=${paymentMethod}`, payload)
+      const res = await axios.post(
+      `http://localhost:8080/api/payments/complete/${bookingId}?paymentMethod=${paymentMethod}&referenceNumber=${payload.referenceNumber}`,
+      payload
+    );
       console.log("  Complete payment response:", res.data)
 
       setRemainingBalance(res.data.remainingBalance || 0)
@@ -241,6 +247,25 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
                   />
                 </div>
               )}
+
+             {/* Reference Number */}
+              {/* {editingPayment && ( */}
+              <div className="mb-3">
+                <label className="form-label">Reference Number</label>
+                <input
+                  type="text"
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                  className="form-control"
+                  placeholder={
+                    paymentMethod === "Cash"
+                      ? "CASH PAYMENT"
+                      : "Enter reference number"
+                  }
+                  disabled={paymentMethod === "Cash"}
+                />
+              </div>
+              {/* )} */}
             </form>
           </div>
 
