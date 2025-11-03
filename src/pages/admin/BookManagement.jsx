@@ -56,6 +56,79 @@ function BookManagement() {
     setExpandedRow(expandedRow === id ? null : id);
   };
 
+// ✅ Check-in API call
+const handleCheckin = async (booking) => {
+  try {
+    const response = await fetch("http://localhost:8080/api/bookings/checkin", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingCode: booking.bookingCode,
+        checkIn: new Date().toISOString(),
+      }),
+    });
+
+    if (response.ok) {
+      alert(`Booking ${booking.bookingCode} CHECKED-IN successfully`);
+      window.location.reload();
+    } else {
+      alert("Failed to check in booking");
+    }
+  } catch (error) {
+    console.error("Error during check-in:", error);
+    alert("An error occurred during check-in");
+  }
+};
+
+// ✅ Check-out API call
+const handleCheckout = async (booking) => {
+  try {
+    const response = await fetch("http://localhost:8080/api/bookings/checkout", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingCode: booking.bookingCode,
+        checkOut: new Date().toISOString(),
+      }),
+    });
+
+    if (response.ok) {
+      alert(`Booking ${booking.bookingCode} CHECKED-OUT successfully`);
+      window.location.reload();
+    } else {
+      alert("Failed to check out booking");
+    }
+  } catch (error) {
+    console.error("Error during check-out:", error);
+    alert("An error occurred during check-out");
+  }
+};
+
+// ✅ Cancel API call
+const handleCancel = async (booking) => {
+  try {
+    const response = await fetch("http://localhost:8080/api/bookings/cancel", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingCode: booking.bookingCode,
+        bookingStatus: "CANCELED",
+      }),
+    });
+
+    if (response.ok) {
+      alert(`Booking ${booking.bookingCode} CANCELLED successfully`);
+      window.location.reload();
+    } else {
+      alert("Failed to cancel booking");
+    }
+  } catch (error) {
+    console.error("Error during booking cancellation:", error);
+    alert("An error occurred during booking cancellation");
+  }
+};
+  
+ 
   return (
     <>
       <div className="container-xxl flex-grow-1 container-p-y">
@@ -95,6 +168,7 @@ function BookManagement() {
                   <th className="text-center">No. of day(s)</th>
                   <th className="text-center">Total Amount</th>
                   <th className="text-center">Payment Status</th>
+                  <th className="text-center">Booking Status</th>
                   <th className="text-center">Actions</th>
                 </tr>
               </thead>
@@ -138,6 +212,23 @@ function BookManagement() {
                         </span>
                       </td>
 
+                      <td className="text-center">
+                        <span
+                          className={`badge ${
+                            b.bookStatus === "CHECKED-IN"
+                              ? "bg-success"
+                              : b.bookStatus === "CHECKED-OUT"
+                              ? "bg-primary"
+                              : b.bookStatus === "CANCELED"
+                              ? "bg-danger"
+                              : "bg-warning text-dark"
+                          }`}
+                        >
+                          {b.bookStatus || "PENDING"}
+                        </span>
+                      </td>
+
+
                       {/* Actions */}
                       <td className="text-center">
                         {expandedRow === b.id ? (
@@ -175,7 +266,7 @@ function BookManagement() {
                             <button
                               type="button"
                               className="btn btn-success me-2"
-                              onClick={() => console.log("Checkin", b.bookingCode)}
+                              onClick={() => handleCheckin(b)}
                             >
                               Checkin
                             </button>
@@ -183,7 +274,7 @@ function BookManagement() {
                             <button
                               type="button"
                               className="btn btn-secondary me-2"
-                              onClick={() => console.log("Checkout", b.bookingCode)}
+                              onClick={() => handleCheckout(b)}
                             >
                               Checkout
                             </button>
@@ -191,7 +282,7 @@ function BookManagement() {
                             <button
                               type="button"
                               className="btn btn-warning me-2"
-                              onClick={() => console.log("Cancel Booking", b.id)}
+                               onClick={() => handleCancel(b)}
                             >
                               Cancel
                             </button>
