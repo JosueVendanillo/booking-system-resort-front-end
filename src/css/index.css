@@ -66,3 +66,20 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #modal_billingReceipt,
+  #modal_billingReceipt * {
+    visibility: visible !important;
+  }
+  #modal_billingReceipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}

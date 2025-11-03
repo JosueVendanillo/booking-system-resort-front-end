@@ -187,7 +187,7 @@ function CustomerManagement() {
                             onClick={() => setEditingCustomer(customer)}
                         >
                             <i className="bx bx-edit-alt me-1"></i>
-                            Edit
+                            View / Edit
                         </button>
                         </td>
                     </tr>

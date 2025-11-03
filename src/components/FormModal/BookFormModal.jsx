@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import axios from "axios";
+import React, { useEffect, useState, useRef  } from "react";
 
 function BookFormModal({ setBookings, bookings, editingBooking, setEditingBooking }) {
 
@@ -32,6 +33,133 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
     };
   };
 
+const [roomAvailability, setRoomAvailability] = useState({});
+const [userEmail, setUserEmail] = useState("");
+const [userContact, setUserContact] = useState("");
+
+const [customers, setCustomers] = useState([]); // fetched customers list
+const [editingId, setEditingId] = useState(null);
+
+const [roomCapacities, setRoomCapacities] = useState([]); // for capacity validation
+const [maxCapacity, setMaxCapacity] = useState(null); // current selected room max capacity
+
+const hasRun = useRef(false);
+
+
+ // fetch customers once
+  useEffect(() => {
+    const fetchCustomerById = async () => {
+    // if (!editingId) return; // skip if no ID
+
+// if(editingBooking){
+//   setEditingId(editingBooking.id)
+// }
+
+    try {
+      // console.log("Fetching customer with ID:", editingBooking);
+      const resp = await axios.get(`http://localhost:8080/api/customers`);
+
+      
+      // If your backend returns a single object, not an array:
+      setCustomers(resp.data);
+      console.log("Fetched customer:", resp);
+    } catch (err) {
+      console.error("Error fetching customer:", err);
+      setCustomers([]);
+    }
+    };
+    fetchCustomerById();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/rooms/room-availability");
+        if (!res.ok) throw new Error("Failed to fetch room availability");
+        const data = await res.json(); // expected array of arrays
+        const map = {};
+        data.forEach(([type, total, available]) => {
+          map[type] = Number(available);
+        });
+        setRoomAvailability(map);
+      } catch (err) {
+        console.error("Error fetching room availability:", err);
+      }
+    };
+    fetchAvailability();
+  }, []);
+
+// for adults and kids capacity validation
+  useEffect(() => {
+    const fetchRoomCapacities = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/rooms/room-capacities");
+      
+              // ✅ Convert array of arrays → object
+      const capacityMap = Object.fromEntries(response.data);
+          setRoomCapacities(capacityMap);
+          
+
+        console.log("Fetched room capacities:", response.data);
+      } catch (error) {
+        console.error("Error fetching room capacities:", error);
+      }
+    };
+
+    fetchRoomCapacities();
+
+  
+
+  }, []);
+
+
+useEffect(() => {
+  if (roomCapacities && Object.keys(roomCapacities).length > 0) {
+    Object.entries(roomCapacities).forEach(([type, capacity]) => {
+      console.log("Checking type:", type);
+      console.log("Capacity:", capacity);
+    });
+  }
+}, [roomCapacities]);
+
+
+
+   // ✅ Iterate once the state is set
+  // useEffect(() => {
+  //   if (roomCapacities.length > 0) {
+  //     roomCapacities.forEach(([type, capacity]) => {
+  //       console.log("Checking type:", type);
+  //       console.log("Capacity:", capacity);
+  //     });
+  //   }
+  // }, [roomCapacities]);
+
+//   useEffect(() => {
+//   if (hasRun.current) return; // 👈 prevents second execution under StrictMode
+//   hasRun.current = true;
+
+//   console.log("#1 Room Capacities:", roomCapacities);
+//   console.log("Selected Unit Type:", formData.unitType);
+
+
+// }, []);
+
+
+//   useEffect(() => {
+
+//   console.log("#1 Room Capacities: ", roomCapacities);
+//   console.log("Selected Unit Type:", formData.unitType);
+
+//   // if (formData.unitType && roomCapacities.length > 0) {
+//   //   const match = roomCapacities.find(([type]) => type === formData.unitType);
+//   //   setMaxCapacity(match ? match[1] : null);
+//   // }
+// },
+// // [formData.unitType, roomCapacities]
+// );
+  
+
   // Form state
   const [formData, setFormData] = useState({
     bookingCode: "",
@@ -61,13 +189,53 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
   // Update formData when editingBooking changes
   useEffect(() => {
     if (editingBooking) {
+
+      console.log("EditingBooking id: " + editingBooking.id);
       const checkIn = new Date(editingBooking.checkIn);
       const checkOut = new Date(editingBooking.checkOut);
+
+
+      // Try to find matching customer from fetched customers
+      let matchedCustomer = null;
+
+      // 1) booking may include nested customer object with id
+      const bookingCustomerId = editingBooking?.customer?.id ?? editingBooking?.customerId ?? editingBooking?.customer_id;
+      if (bookingCustomerId != null) {
+        matchedCustomer = customers.find((c) => Number(c.id) === Number(bookingCustomerId));
+      }
+
+      // 2) match by email if present
+      if (!matchedCustomer && (editingBooking?.customer?.email || editingBooking?.email)) {
+        const targetEmail = (editingBooking.customer?.email || editingBooking.email || "").toString().toLowerCase();
+        matchedCustomer = customers.find((c) => c.email && c.email.toLowerCase() === targetEmail);
+      }
+
+      // 3) fallback match by fullname
+      if (!matchedCustomer && editingBooking?.fullname) {
+        const targetName = editingBooking.fullname.toString().toLowerCase();
+        matchedCustomer = customers.find((c) => c.fullname && c.fullname.toLowerCase() === targetName);
+      }
+
+      const emailVal =
+        matchedCustomer?.email ??
+        editingBooking.customer?.email ??
+        editingBooking.email ??
+        "";
+      const contactVal =
+        matchedCustomer?.contactNumber ??
+        editingBooking.customer?.contactNumber ??
+        editingBooking.contactNumber ??
+        "";
+   console.log("Customer:" + customers)
+      console.log("Editing Booking:", editingBooking);
+      console.log("email:", userEmail);
+      console.log("contactNumber:", userContact);
+
       setFormData({
         bookingCode: editingBooking.bookingCode || "",
         fullname: editingBooking.fullname || "",
-        email: editingBooking.email || editingBooking.customer?.email || "",
-        contactNumber: editingBooking.contactNumber || editingBooking.customer?.contactNumber || "",
+        email: emailVal,
+        contactNumber: contactVal,
         adults: editingBooking.adults || 1,
         kids: editingBooking.kids || 0,
         unitType: editingBooking.unitType || "",
@@ -76,6 +244,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
         checkOutDate: formatDate(checkOut),
         checkOutTime: formatTime(checkOut),
       });
+      
     } else {
       const checkIn = new Date();
       const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
@@ -99,6 +268,26 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
 
     const handleChange = (e) => {
     const { name, value } = e.target;
+
+     // 🧠 If user is changing Adults or Kids count
+  if (name === "adults" || name === "kids") {
+    const nextValue = parseInt(value) || 0;
+
+    // Compute next total guests based on current formData
+    const nextData = { ...formData, [name]: nextValue };
+    const total = (parseInt(nextData.adults) || 0) + (parseInt(nextData.kids) || 0);
+
+    // Get the selected unit type and its capacity
+    const selectedType = nextData.unitType;
+    const max = roomCapacities[selectedType] || 99; // Default 99 if not selected yet
+
+    if (selectedType && total > max) {
+      alert(`Total guests (${total}) exceed the capacity (${max}) for ${selectedType}.`);
+      return; // ❌ Stop here, don't update the state
+    }
+  }
+
+
     setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -140,6 +329,13 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
     //   return;
     // }
 
+
+        const selectedAvailable = roomAvailability[formData.unitType];
+    if (typeof selectedAvailable !== "undefined" && selectedAvailable === 0 && !(editingBooking && editingBooking.unitType === formData.unitType)) {
+      alert("Selected room type is currently unavailable. Please choose another room.");
+      return;
+    }
+
     const payload = {
       fullname: formData.fullname,
       adults: Number(formData.adults) || 1,
@@ -156,12 +352,14 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
 
     try {
       let response;
+
       if (editingBooking) {
         response = await fetch(`http://localhost:8080/api/bookings/${editingBooking.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
+
       } else {
         response = await fetch("http://localhost:8080/api/bookings", {
           method: "POST",
@@ -204,6 +402,9 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
   };
 
 
+  
+
+
   return (
     <div className="modal fade" id="modal_createEditBook" tabIndex="-1" aria-hidden="true">
       <div className="modal-dialog modal-md modal-dialog-scrollable" role="document">
@@ -230,7 +431,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
 
               {/* User Select */}
               <div className="col-12 mb-3">
-                <label className="form-label">Select User</label>
+                <label className="form-label">Fullname</label>
                   <input
                     className="form-control"
                     name="fullname"
@@ -255,7 +456,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 type="email"
                 name="email"
                 value={formData.email}
-                onChange={handleChange}
+                // onChange={handleChange}
                 disabled={!!editingBooking} // Disable if editing
               />
                 {editingBooking && (
@@ -272,7 +473,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
               className="form-control"
               name="contactNumber"
               value={formData.contactNumber}
-              onChange={handleChange}
+              // onChange={handleChange}
               disabled={!!editingBooking} // Disable if editing
             />
               {editingBooking && (
@@ -282,13 +483,36 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
               )}
           </div>
 
+
+
+
+
               {/* Adults */}
               <div className="col-6 mb-3">
                 <label className="form-label">Adults</label>
                 <div className="input-group">
                   <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, adults: Math.max(1, (parseInt(prev.adults) || 1) - 1) }))}>-</button>
                   <input type="text" className="form-control text-center" name="adults" value={formData.adults || 1} min={1} max={20} onChange={handleChange} />
-                  <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, adults: Math.min(20, (parseInt(prev.adults) || 1) + 1) }))}>+</button>
+                  <button type="button" className="btn btn-outline-secondary" 
+                   onClick={() =>
+                    setFormData((prev) => {
+                      const nextAdults = Math.min(20, (parseInt(prev.adults) || 1) + 1);
+                      const total = nextAdults + (parseInt(prev.kids) || 0);
+
+                      const selectedType = prev.unitType;
+                      const max = roomCapacities[selectedType] || 99; // default large value if not selected
+
+                      if (total > max) {
+                        alert(`Total guests (${total}) exceed capacity (${max}) for ${selectedType}.`);
+                        return prev; // do not update
+                      }
+
+                      return { ...prev, adults: nextAdults };
+                    })
+                  }
+                  >
+                    +
+                  </button>
                 </div>
               </div>
 
@@ -298,12 +522,31 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 <div className="input-group">
                   <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, kids: Math.max(0, (parseInt(prev.kids) || 0) - 1) }))}>-</button>
                   <input type="text" className="form-control text-center" name="kids" value={formData.kids || 0} min={1} max={20} onChange={handleChange} />
-                  <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, kids: Math.min(20, (parseInt(prev.kids) || 0) + 1) }))}>+</button>
+                  <button type="button" className="btn btn-outline-secondary" 
+                  onClick={() =>
+                    setFormData((prev) => {
+                      const nextKids = Math.min(20, (parseInt(prev.kids) || 0) + 1);
+                      const total = (parseInt(prev.adults) || 0) + nextKids;
+
+                      const selectedType = prev.unitType;
+                      const max = roomCapacities[selectedType] || 99;
+
+                      if (total > max) {
+                        alert(`Total guests (${total}) exceed capacity (${max}) for ${selectedType}.`);
+                        return prev;
+                      }
+
+                      return { ...prev, kids: nextKids };
+                    })
+                  }
+                  >
+                    +
+                  </button>
                 </div>
               </div>
 
               {/* Unit Type */}
-              <div className="col-12 mb-3">
+              {/* <div className="col-12 mb-3">
                 <label className="form-label">Select Type</label>
                 <select className="form-select" name="unitType" value={formData.unitType} onChange={handleChange}>
                   <option value="" disabled>Select Room</option>
@@ -316,6 +559,50 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                   <option value="couple-room">Couple Room (Private)</option>
                   <option value="family-room">Family Room (Private)</option>
                 </select>
+              </div> */}
+
+               <div className="col-12 mb-3">
+                <label className="form-label">Select Type</label>
+{/* -               <select className="form-select" name="unitType" value={formData.unitType} onChange={handleChange}>
+-                  <option value="" disabled>Select Room</option>
+-                  <option value="ktv-room">KTV Room</option>
+-                  <option value="big-cabana">Big Cabana</option>
+-                  <option value="small-cabana">Small Cabana</option>
+-                  <option value="brown-table">Brown Table</option>
+-                  <option value="colored-table">Colored Table</option>
+-                  <option value="garden-table">Garden Table</option>
+-                  <option value="couple-room">Couple Room (Private)</option>
+-                  <option value="family-room">Family Room (Private)</option>
+-                </select> */}
+                <select className="form-select" name="unitType" value={formData.unitType} onChange={handleChange}>
+                  <option value="" disabled>Select Room</option>
+                  {[
+                    { v: "ktv-room", l: "KTV Room" },
+                    { v: "big-cabana", l: "Big Cabana" },
+                    { v: "small-cabana", l: "Small Cabana" },
+                    { v: "brown-table", l: "Brown Table" },
+                    { v: "colored-table", l: "Colored Table" },
+                    { v: "garden-table", l: "Garden Table" },
+                    { v: "couple-room", l: "Couple Room (Private)" },
+                    { v: "family-room", l: "Family Room (Private)" },
+                  ].map(({ v, l }) => {
+                    const available = roomAvailability[v];
+                    const capacity = roomCapacities[v]; // ✅ get max capacity
+                    const disabled =
+                      typeof available !== "undefined" &&
+                      available === 0 &&
+                      !(editingBooking && editingBooking.unitType === v);
+
+                    return (
+                      <option key={v} value={v} disabled={disabled}>
+                        {l}
+                        {typeof capacity !== "undefined" ? ` — Max ${capacity} guests` : ""}
+                        {typeof available !== "undefined" ? ` — ${available} available` : ""}
+                        {disabled ? " (Unavailable)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
 
               {/* Check In */}
@@ -324,7 +611,9 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Date</label>
-                    <input className="form-control" type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} min={getToday()} disabled={!!editingBooking} />
+                    <input className="form-control" type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} min={getToday()} 
+                    // disabled={!!editingBooking} 
+                    />
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Time</label>
@@ -333,7 +622,7 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
                         ? getNowTime()
                         : "00:00"
                     } 
-                    disabled={!!editingBooking} // Disable if editing
+                    // disabled={!!editingBooking} // Disable if editing
                     />
                   </div>
                 </div>

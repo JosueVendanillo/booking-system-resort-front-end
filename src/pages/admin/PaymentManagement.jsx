@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PaymentFormModal from "../../components/FormModal/PaymentFormModal";
+import BillingReceiptModal from "../../components/FormModal/BillingReceiptModal";
+
 
 function PaymentManagement() {
   const [payments, setPayments] = useState([]);
   const [search, setSearch] = useState("");
   const [editingPayment, setEditingPayment] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState(null); // For billing modal
 
    // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,6 +27,9 @@ function PaymentManagement() {
       console.error("Error fetching payments:", err);
     }
   };
+
+
+  
 
   //   Filter payments by search (Booking ID or method)
   const filteredPayments = payments.filter(
@@ -96,16 +102,33 @@ function PaymentManagement() {
                         })}
                       </td>
                       <td className="text-center">
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          data-bs-toggle="modal"
-                          data-bs-target="#modal_createEditPayment"
-                          onClick={() => setEditingPayment(p)}
-                        >
-                          <i className="bx bx-edit-alt me-1"></i>
-                          Edit
-                        </button>
+                        <div className="d-flex justify-content-center gap-2">
+                          {/* Edit button */}
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal_createEditPayment"
+                            onClick={() => setEditingPayment(p)}
+                          >
+                            <i className="bx bx-edit-alt me-1"></i>
+                            Edit
+                          </button>
+
+                          {/* Billing button */}
+                          <button
+                            type="button"
+                            className="btn btn-info"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal_billingReceipt"
+                            onClick={() =>
+                              setSelectedPayment(p)
+                            }
+                          >
+                            <i className="bx bx-receipt me-1"></i>
+                            Billing
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -154,6 +177,9 @@ function PaymentManagement() {
         editingPayment={editingPayment}
         setEditingPayment={setEditingPayment}
       />
+
+      {/* Billing / Receipt Modal */}
+      <BillingReceiptModal selectedPayment={selectedPayment} />
     </>
   );
 }
