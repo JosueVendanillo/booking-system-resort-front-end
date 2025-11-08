@@ -108,9 +108,6 @@ const hasRun = useRef(false);
     };
 
     fetchRoomCapacities();
-
-  
-
   }, []);
 
 
