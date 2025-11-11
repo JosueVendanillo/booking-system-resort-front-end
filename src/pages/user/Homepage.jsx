@@ -39,7 +39,7 @@ const [bookingCode, setBookingCode] = useState("");
 const [confirmedAmount, setConfirmedAmount] = useState(0);
 const [downpayment, setDownpayment] = useState(0); // <-- NEW state
 const [adultCount, setAdultCount] = useState(0);
-const [kidsCount, setKidsCountt] = useState(0);
+const [kidsCount, setKidsCount] = useState(0);
  
 // Add these helpers at the top of your component
 const formatDate = (date) => date.toLocaleDateString("en-CA");
@@ -166,8 +166,22 @@ useEffect(() => {
 }, [booking.unitType, roomCapacities]);
 
 
+const isLoggedIn = () => {
+  // Example: check if user object exists in localStorage
+  return !!localStorage.getItem("user"); 
+};
+
+
+
 const handleSubmit = async (e) => {
   e.preventDefault();
+
+
+    if (!isLoggedIn()) {
+    alert("Please login first to make a booking.");
+    navigate("/login");
+    return;
+  }
 
     // ✅ Ask for confirmation first
   const userConfirmed = window.confirm("Are you sure you want to submit the booking?");
@@ -220,7 +234,7 @@ const handleSubmit = async (e) => {
     setDownpayment(totalAmount * 0.3);
     // setPeopleCost(computedPeopleCost);
     setAdultCount(adults);
-    setKidsCountt(kids);
+    setKidsCount(kids);
     
     
      // Save booking temporarily

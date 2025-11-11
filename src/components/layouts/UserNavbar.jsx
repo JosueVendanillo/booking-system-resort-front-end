@@ -1,124 +1,146 @@
-import React, { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { getUser, getUserRole } from '../../utils/auth';
-import Homepage from '../../pages/user/Homepage';
+import React, { useEffect, useState } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { getUser, getUserRole, clearUser } from "../../utils/auth";
 
 function UserNavbar() {
-    const [activeSection, setActiveSection] = useState('');
-    const [user, setUser] = useState(null);
-    const [userRole, setRole] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeSection, setActiveSection] = useState("");
+  const [user, setUser] = useState(getUser());
+  const [userRole, setRole] = useState(getUserRole() || "GUEST");
 
-
-
-  // ✅ Load user initially and whenever login/logout occurs
   useEffect(() => {
-    const loadUser = () => {
+    const handleUserChange = () => {
       const loggedUser = getUser();
       const role = getUserRole();
-
       if (loggedUser) {
         setUser(loggedUser);
         setRole(role);
       } else {
         setUser(null);
-        setRole('GUEST');
+        setRole("GUEST");
       }
     };
-
-    // Initial load
-    loadUser();
-
-    // Listen for both localStorage (other tabs) and custom userChange events (same tab)
-    window.addEventListener('storage', loadUser);
-    window.addEventListener('userChange', loadUser);
-
+    window.addEventListener("userChange", handleUserChange);
+    window.addEventListener("storage", handleUserChange);
     return () => {
-      window.removeEventListener('storage', loadUser);
-      window.removeEventListener('userChange', loadUser);
+      window.removeEventListener("userChange", handleUserChange);
+      window.removeEventListener("storage", handleUserChange);
     };
   }, []);
 
-  // ✅ Observe active section (unchanged)
   useEffect(() => {
-    const sections = document.querySelectorAll('section');
+    const sections = document.querySelectorAll("section");
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
+          if (entry.isIntersecting) setActiveSection(entry.target.id);
         });
       },
       { threshold: 0.6 }
     );
 
     sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [location]); // re-run on route change
 
-    return () => {
-      sections.forEach((section) => observer.unobserve(section));
-    };
-  }, []);
-
-  // ✅ Logout handler
   const handleLogout = () => {
-    setUser(null);
-    setRole('GUEST');
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('userRole');
-    window.dispatchEvent(new Event('userChange')); // 🔥 notify all listeners
-    window.location.href = '/login';
+    clearUser();
+    window.dispatchEvent(new Event("userChange"));
+    navigate("/login");
   };
 
+  const scrollToSection = (id) => {
+    if (location.pathname !== "/") {
+      navigate("/"); // go to homepage first
+      setTimeout(() => {
+        const section = document.getElementById(id);
+        if (section) section.scrollIntoView({ behavior: "smooth" });
+      }, 100); // small delay to wait for DOM
+    } else {
+      const section = document.getElementById(id);
+      if (section) section.scrollIntoView({ behavior: "smooth" });
+    }
 
-    return (
-         <nav className="navbar navbar-expand-xl bg-white shadow sticky-top">
-            <div className="container-xxl">
-                <NavLink to="/" className="navbar-brand">
-                    <img src="/assets/img/projectImgs/logo.png" alt="Logo" style={{ height: '45px', width: '150px' }} />
-                </NavLink>
+    // close mobile collapse
+    const navbarCollapse = document.getElementById("navbarNav");
+    if (navbarCollapse && navbarCollapse.classList.contains("show")) {
+      navbarCollapse.classList.remove("show");
+    }
+  };
 
-                <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span className="navbar-toggler-icon"></span>
+  return (
+    <nav className="navbar navbar-expand-xl bg-white shadow sticky-top">
+      <div className="container-xxl">
+        <NavLink to="/" className="navbar-brand">
+          <img
+            src="/assets/img/projectImgs/logo.png"
+            alt="Logo"
+            style={{ height: "45px", width: "150px" }}
+          />
+        </NavLink>
+
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
+
+        <div className="collapse navbar-collapse justify-content-end h-100" id="navbarNav">
+          <ul className="navbar-nav align-items-center h-100">
+            {["hero", "about", "amenities", "gallery", "footer"].map((section) => (
+              <li
+                key={section}
+                className={`nav-item ${
+                  activeSection === section
+                    ? "active border-bottom border-4 border-primary fw-bold text-black"
+                    : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  className="nav-link px-3 btn btn-link border-0"
+                  onClick={() => scrollToSection(section)}
+                >
+                  {section === "hero"
+                    ? "Home"
+                    : section.charAt(0).toUpperCase() + section.slice(1)}
                 </button>
+              </li>
+            ))}
+            <li>
+              <button
+                type="button"
+                className="btn btn-primary ms-xl-3"
+                onClick={() => {
+                  if (!user) navigate("/login");
+                  else scrollToSection("booking-cta");
+                }}
+              >
+                Book Now
+              </button>
+            </li>
+          </ul>
 
-                <div className="collapse navbar-collapse justify-content-end h-100" id="navbarNav">
-                    <ul className="navbar-nav align-items-center h-100">
-                        <li className={`nav-item ${activeSection === 'hero' ? 'active border-bottom border-4 border-primary fw-bold text-black' : ''}`}>
-                            <a href="/#hero" className="nav-link px-3">Home</a>
-                        </li>
-                        <li className={`nav-item ${activeSection === 'about' ? 'active border-bottom border-4 border-primary fw-bold text-black' : ''}`}>
-                            <a href="/#about" className="nav-link px-3">About</a>
-                        </li>
-                        <li className={`nav-item ${activeSection === 'amenities' ? 'active border-bottom border-4 border-primary fw-bold' : ''}`}>
-                            <a href="/#amenities" className="nav-link px-3">Amenities</a>
-                        </li>
-                        <li className={`nav-item ${activeSection === 'gallery' ? 'active border-bottom border-4 border-primary fw-bold' : ''}`}>
-                            <a href="/#gallery" className="nav-link px-3">Gallery</a>
-                        </li>
-                        <li className={`nav-item ${activeSection === 'footer' || activeSection === 'booking-cta' ? 'active border-bottom border-4 border-primary fw-bold' : ''}`}>
-                            <a href="/#footer" className="nav-link px-3">Contact</a>
-                        </li>
-                        <li>
-                            {/* <NavLink to="/#booking-cta" className="btn btn-primary ms-xl-3">Book Now</NavLink> */}
-                            <a className="btn btn-primary ms-xl-3" href="">Book Now</a>
-                        </li>
-  
-                    </ul>
-                                        {/* ✅ Only show this dropdown if user is logged in */}
-          {user ? (
-            <div className="nav-item navbar-dropdown dropdown-user dropdown">
-              <a
-                className="nav-link dropdown-toggle hide-arrow hstack g-5"
-                href="javascript:void(0);"
+          {user && (
+            <div className="nav-item dropdown ms-3">
+              <button
+                type="button"
+                className="btn btn-link nav-link dropdown-toggle"
+                id="userDropdown"
                 data-bs-toggle="dropdown"
+                aria-expanded="false"
               >
                 <span className="mx-3">|</span>
-                <span>{user?.fullName || user?.email}</span>
-              </a>
-              <ul className="dropdown-menu dropdown-menu-end">
+                {user?.fullName || user?.email}
+              </button>
+
+              <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                 <li>
-                  <a className="dropdown-item" href="#">
+                  <div className="dropdown-item">
                     <div className="d-flex">
                       <div className="flex-shrink-0 me-3">|</div>
                       <div className="flex-grow-1">
@@ -128,24 +150,21 @@ function UserNavbar() {
                         <small className="text-muted">{userRole}</small>
                       </div>
                     </div>
-                  </a>
+                  </div>
                 </li>
-                <li>
-                  <div className="dropdown-divider"></div>
-                </li>
+                <li><div className="dropdown-divider"></div></li>
                 <li>
                   <button onClick={handleLogout} className="dropdown-item">
-                    <i className="bx bx-power-off me-2"></i>
-                    <span className="align-middle">Log Out</span>
+                    <i className="bx bx-power-off me-2"></i> Log Out
                   </button>
                 </li>
               </ul>
             </div>
-          ) : null}
-                </div>
-            </div>
-        </nav>
-    );
+          )}
+        </div>
+      </div>
+    </nav>
+  );
 }
 
 export default UserNavbar;
