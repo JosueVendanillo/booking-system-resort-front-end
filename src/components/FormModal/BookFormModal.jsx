@@ -108,9 +108,6 @@ const hasRun = useRef(false);
     };
 
     fetchRoomCapacities();
-
-  
-
   }, []);
 
 
@@ -456,7 +453,7 @@ useEffect(() => {
                 type="email"
                 name="email"
                 value={formData.email}
-                // onChange={handleChange}
+                onChange={handleChange}
                 disabled={!!editingBooking} // Disable if editing
               />
                 {editingBooking && (
@@ -473,7 +470,7 @@ useEffect(() => {
               className="form-control"
               name="contactNumber"
               value={formData.contactNumber}
-              // onChange={handleChange}
+              onChange={handleChange}
               disabled={!!editingBooking} // Disable if editing
             />
               {editingBooking && (

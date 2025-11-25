@@ -9,56 +9,51 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+const handleLogin = async (e) => {
+  e.preventDefault();
 
-    if (!email || !password) {
-      alert("Please enter email and password!");
-      return;
-    }
+  if (!email || !password) {
+    alert("Please enter email and password!");
+    return;
+  }
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const response = await axios.post("http://localhost:8080/api/auth/login", {
-        email: email,
-        password: password,
-      });
+    const response = await axios.post("http://localhost:8080/api/auth/login", {
+      email,
+      password,
+    });
 
-        console.log("response email:", response.data.email);
-        console.log("response fullName:", response.data.fullName);
-        console.log("response role:", response.data.role);
-        console.log("response token:", response.data.token);
+    if (response.data) {
+      const userData = {
+        fullName: response.data.fullName,
+        email: response.data.email,
+        role: response.data.role,
+        token: response.data.token,
+      };
 
-      if (response.data) {
-        // ✅ Assuming API returns { fullName, email, token }
-        const userData = {
-          fullName: response.data.fullName,
-          email: response.data.email,
-          role: response.data.role, // e.g., "ADMIN", "MODERATOR", "CUSTOMER"
-          token: response.data.token,
-        };
+      // Save user to localStorage via your util
+      setUser(userData);
 
-        // Save via util
-        setUser(userData);
+      // 🔥 Trigger the custom event so UserNavbar updates immediately
+      window.dispatchEvent(new Event("userChange"));
 
-        console.log("Logged in user:", userData);
-
-        if (userData.role === "ADMIN" || userData.role === "MODERATOR") {
-          navigate("/admin/dashboard");
-        } else {
-          navigate("/"); // Customer → homepage
-        }
+      // Navigate based on role
+      if (userData.role === "ADMIN" || userData.role === "MODERATOR") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/"); // Customer → homepage
       }
-    } catch (error) {
-
-
-      console.error("Login failed:", error.response?.data || error.message);
-      alert(error.response?.data?.error || "Invalid email or password. Please try again.");
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("Login failed:", error.response?.data || error.message);
+    alert(error.response?.data?.error || "Invalid email or password. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
     return (
         <div className="d-flex flex-column flex-md-row vh-100">
             {/* Left Column with Gradient Background */}

@@ -25,6 +25,13 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
   console.log("-----");
 
 const handleConfirm = async () => {
+
+    // require reference number
+  if (!referenceNumber || !referenceNumber.trim()) {
+    alert("Please enter a reference number before confirming the payment.");
+    return;
+  }
+
   try {
     const payload = {
       bookingCode: bookingCode,
@@ -112,6 +119,7 @@ const handleConfirm = async () => {
                   className="form-control mt-2"
                   value={referenceNumber} // ✅ controlled input
                   onChange={(e) => setReferenceNumber(e.target.value)} // ✅ update state
+              
                 />
                 <p>Please enter reference number of your online transactions.</p>
               </div>
@@ -126,7 +134,8 @@ const handleConfirm = async () => {
             <button
               className="btn btn-primary rounded-pill"
               onClick={handleConfirm}
-              disabled={!selectedMethod} // disable until a method is selected
+              disabled={!selectedMethod || referenceNumber.trim().length === 0}
+
             >
               Confirm Payment
             </button>

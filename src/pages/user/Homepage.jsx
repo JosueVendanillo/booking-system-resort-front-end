@@ -28,6 +28,10 @@ const [showModal, setShowModal] = useState(false);
 const [roomType, setRoomType] = useState("");
 const [maxCapacity, setMaxCapacity] = useState("");
 
+const [roomAvailability, setRoomAvailability] = useState({});
+const [availableCount, setAvailableCount] = useState([]);
+
+
 
 const navigate = useNavigate();
 const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -35,7 +39,7 @@ const [bookingCode, setBookingCode] = useState("");
 const [confirmedAmount, setConfirmedAmount] = useState(0);
 const [downpayment, setDownpayment] = useState(0); // <-- NEW state
 const [adultCount, setAdultCount] = useState(0);
-const [kidsCount, setKidsCountt] = useState(0);
+const [kidsCount, setKidsCount] = useState(0);
  
 // Add these helpers at the top of your component
 const formatDate = (date) => date.toLocaleDateString("en-CA");
@@ -117,6 +121,28 @@ useEffect(() => {
   };
 
 
+    useEffect(() => {
+      const fetchAvailability = async () => {
+        try {
+          const res = await fetch("http://localhost:8080/api/rooms/room-availability");
+          if (!res.ok) throw new Error("Failed to fetch room availability");
+          const data = await res.json(); // expected array of arrays
+          const map = {};
+          data.forEach(([type, total, available]) => {
+            map[type] = Number(available);
+          });
+          setRoomAvailability(map);
+          console.log("Room Availability:", map);
+        } catch (err) {
+          console.error("Error fetching room availability:", err);
+        }
+
+      };
+      fetchAvailability();
+    }, []);
+  
+
+
   
  useEffect(() => {
     const fetchRoomCapacities = async () => {
@@ -139,8 +165,23 @@ useEffect(() => {
   }
 }, [booking.unitType, roomCapacities]);
 
+
+const isLoggedIn = () => {
+  // Example: check if user object exists in localStorage
+  return !!localStorage.getItem("user"); 
+};
+
+
+
 const handleSubmit = async (e) => {
   e.preventDefault();
+
+
+    if (!isLoggedIn()) {
+    alert("Please login first to make a booking.");
+    navigate("/login");
+    return;
+  }
 
     // ✅ Ask for confirmation first
   const userConfirmed = window.confirm("Are you sure you want to submit the booking?");
@@ -193,7 +234,7 @@ const handleSubmit = async (e) => {
     setDownpayment(totalAmount * 0.3);
     // setPeopleCost(computedPeopleCost);
     setAdultCount(adults);
-    setKidsCountt(kids);
+    setKidsCount(kids);
     
     
      // Save booking temporarily
@@ -735,6 +776,15 @@ const handleSubmit = async (e) => {
       // update maxCapacity based on selected room
       const match = roomCapacities.find(([type]) => type === e.target.value);
       setMaxCapacity(match ? match[1] : null);
+
+      const selectedRoom = e.target.value;
+
+      // show available rooms based on selected type
+      const info = roomAvailability[selectedRoom];
+      setAvailableCount( roomAvailability[selectedRoom] !== undefined ? roomAvailability[selectedRoom] : null );
+
+      console.log("Selected Room:", selectedRoom);
+      console.log("Available Count:", roomAvailability[selectedRoom]);
     }}
     required
   >
@@ -749,9 +799,12 @@ const handleSubmit = async (e) => {
     <option value="family-room">Family Room (Private)</option>
   </select>
 
+
   {maxCapacity && (
     <small className="text-muted">
-      This room allows up to <strong>{maxCapacity}</strong> guests.
+      This room allows up to <strong>{maxCapacity}</strong> guests. <br />
+      Room Availability:{" "}
+      <strong>{availableCount !== null ? availableCount : "N/A"}</strong>
     </small>
   )}
 </div>
