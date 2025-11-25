@@ -121,6 +121,11 @@ useEffect(() => {
 }, [roomCapacities]);
 
 
+const calculateTotalByGuests = (adults, kids) => {
+  return adults * 150 + kids * 100; // <-- example formula
+};
+
+
 
    // ✅ Iterate once the state is set
   // useEffect(() => {
@@ -170,6 +175,7 @@ useEffect(() => {
     checkInTime: getNowTime(),
     checkOutDate: getToday(),
     checkOutTime: getNowTime(),
+    totalAmount: 0
   });
 
   // Update checkout automatically whenever check-in changes
@@ -240,6 +246,7 @@ useEffect(() => {
         checkInTime: formatTime(checkIn),
         checkOutDate: formatDate(checkOut),
         checkOutTime: formatTime(checkOut),
+        totalAmount: editingBooking.totalAmount ?? 0
       });
       
     } else {
@@ -282,7 +289,21 @@ useEffect(() => {
       alert(`Total guests (${total}) exceed the capacity (${max}) for ${selectedType}.`);
       return; // ❌ Stop here, don't update the state
     }
-  }
+
+
+   // ⭐ UPDATE TOTAL AMOUNT ONLY WHEN ADULTS/KIDS CHANGE
+  const updatedTotal = calculateTotalByGuests(nextData.adults, nextData.kids);
+
+  console.log("Updated Total Amount:", updatedTotal);
+
+  setFormData(prev => ({
+    ...prev,
+    [name]: nextValue,
+    totalAmount: updatedTotal   // ⭐ update here
+  }));
+
+  return;
+}
 
 
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -399,9 +420,6 @@ useEffect(() => {
   };
 
 
-  
-
-
   return (
     <div className="modal fade" id="modal_createEditBook" tabIndex="-1" aria-hidden="true">
       <div className="modal-dialog modal-md modal-dialog-scrollable" role="document">
@@ -479,10 +497,6 @@ useEffect(() => {
                 </small>
               )}
           </div>
-
-
-
-
 
               {/* Adults */}
               <div className="col-6 mb-3">
