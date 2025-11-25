@@ -6,8 +6,8 @@ import axios from 'axios';
 function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalAmount,downpayment,adults, kids }) {
   if (!show) return null; // Don't render unless modal is open
 
-  const ADULT_PRICE = 300; // Example price per adult
-  const KID_PRICE = 150; // Example price per kid
+  const ADULT_PRICE = 150; // Example price per adult
+  const KID_PRICE = 100; // Example price per kid
   const [selectedMethod, setSelectedMethod] = useState(""); // track selected method
   const [peopleCost, setPeopleCost] = useState((adults * ADULT_PRICE) + (kids * KID_PRICE));
   const [adultCount, setAdultCount] = useState(adults * ADULT_PRICE);
