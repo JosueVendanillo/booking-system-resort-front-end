@@ -38,7 +38,10 @@ function BookManagement() {
 
   // Filter bookings
   const filteredBookings = bookings.filter((b) =>
-    b.fullname.toLowerCase().includes(search.toLowerCase())
+      (b.fullname || "").toLowerCase().includes(search.toLowerCase()) ||
+      (b.bookingCode || "").toLowerCase().includes(search.toLowerCase()) ||
+       (b.unitType || "").toLowerCase().includes(search.toLowerCase())
+
   );
 
   // Pagination logic
