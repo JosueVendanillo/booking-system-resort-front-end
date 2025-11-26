@@ -45,9 +45,10 @@ const handleConfirm = async () => {
 
     console.log("Payment saved:", response.data);
     onPaymentDone(); // callback to Homepage
+    window.location.reload(); // reload to reflect changes
   } catch (err) {
     console.error("Payment failed:", err);
-    alert("Payment failed, please try again.");
+    alert("Error occured, Please check the room if still not full. Thank you.");
   }
 };
 
