@@ -1,4 +1,4 @@
-import React,{ useState, useEffect } from 'react'
+import React,{ useState, useEffect, use } from 'react'
 import axios from 'axios';
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import {
@@ -15,8 +15,10 @@ import {
     FaFacebookF, FaTwitter, FaInstagram, FaYoutube
 } from "react-icons/fa"
 import PaymentChannel from '../../components/FormModal/PaymentChannelModal';
+import { getUser } from '../../utils/auth';
 
 function Homepage() {
+  
 
 //pricing
 const ADULT_PRICE = 300;
@@ -65,6 +67,17 @@ const getDefaultCheckout = (checkIn) => {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
+  const [loggedUser, setLoggedUser] = useState(null);
+
+useEffect(() => {
+const loggedUserEmail = getUser();
+console.log("Checking who's email is logged in: ",loggedUserEmail.email );
+setLoggedUser(loggedUserEmail.email);
+
+}, []);
+
+
+
 // Update your booking state initialization
 const [booking, setBooking] = useState({
   fullname: "",
@@ -78,7 +91,8 @@ const [booking, setBooking] = useState({
   checkOutTime: getNowTime(),
   customer: {
     email: "",
-    contactNumber: ""
+    contactNumber: "",
+    createdBy: loggedUser || ""
   }
 });
 
@@ -183,6 +197,18 @@ const handleSubmit = async (e) => {
     return;
   }
 
+  if(availableCount[booking.unitType] === 0){
+    alert("Room Count is already full. Please choose another room.");
+    return;
+  }
+
+
+
+  if(roomAvailability[booking.unitType] <= 0){ { 
+    alert("Selected room type is currently unavailable. Please choose another type.");
+    return;
+  } }
+
     // ✅ Ask for confirmation first
   const userConfirmed = window.confirm("Are you sure you want to submit the booking?");
   if (!userConfirmed) {
@@ -209,6 +235,7 @@ const handleSubmit = async (e) => {
         email: booking.customer.email,
         contactNumber: booking.customer.contactNumber,
         gender: booking.customer.gender,  
+        createdBy: loggedUser || ""
       },
     };
 
@@ -216,6 +243,7 @@ const handleSubmit = async (e) => {
       "http://localhost:8080/api/bookings",
       payload
     );
+    
 
         // ✅ Compute total cost (room + people)
     const totalAmount = response.data.totalAmount || 0; // from backend
@@ -270,8 +298,12 @@ const handleSubmit = async (e) => {
       }
     });
   } catch (err) {
-    setError("Failed to submit booking. Please try again.");
+    // const errorMessage = err.response?.data?.message || "Failed to submit booking. Please try again.";
+    
     console.error(err.response?.data || err.message);
+    alert(err.response?.data?.error || err.message || "Failed to submit booking. Please try again." );
+    
+    setError("Failed to submit booking. Please try again.");
   } finally {
     setLoading(false);
   }
@@ -785,6 +817,11 @@ const handleSubmit = async (e) => {
 
       console.log("Selected Room:", selectedRoom);
       console.log("Available Count:", roomAvailability[selectedRoom]);
+
+      if(roomAvailability[selectedRoom] <= 0){
+        alert("Selected room type is full. Please choose another room type.");
+      }
+
     }}
     required
   >

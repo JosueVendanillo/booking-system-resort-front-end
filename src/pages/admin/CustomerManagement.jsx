@@ -124,6 +124,7 @@ function CustomerManagement() {
                   <th>Email</th>
                   <th className="text-center">Gender</th>
                   <th className="text-center">Contact</th>
+                  <th className="text-center">Created By</th>
                   <th className="text-center">Actions</th>
                 </tr>
               </thead>
@@ -138,6 +139,9 @@ function CustomerManagement() {
                         </td>
                         <td className="text-center">
                         {customer.contactNumber}
+                        </td>
+                        <td className="text-center">
+                        {customer.createdBy || "N/A"}
                         </td>
                         <td className="text-center flex items-center justify-center">
                                <span
