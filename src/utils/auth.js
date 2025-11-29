@@ -10,7 +10,7 @@ export const setUser = (user) => {
 // Get user from localStorage
 export const getUser = () => {
   const user = localStorage.getItem(USER_KEY);
-  console.log("getUser retrieved:", user);
+  // console.log("getUser retrieved:", user);
   return user ? JSON.parse(user) : null;
 };
 

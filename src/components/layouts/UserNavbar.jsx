@@ -93,10 +93,10 @@ useEffect(() => {
 
 
 
-  console.log("Logged User in Navbar: ", loggedUser);
-  console.log("Email in Navbar: ", email);
-  console.log("Logged User in Navbar: ", fullName);
-  console.log("Fetched Names in Navbar: ", names);
+  // console.log("Logged User in Navbar: ", loggedUser);
+  // console.log("Email in Navbar: ", email);
+  // console.log("Logged User in Navbar: ", fullName);
+  // console.log("Fetched Names in Navbar: ", names);
 
 
   //  useEffect(() => {

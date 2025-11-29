@@ -69,12 +69,9 @@ const getDefaultCheckout = (checkIn) => {
 
   const [loggedUser, setLoggedUser] = useState(null);
 
-// useEffect(() => {
-// const loggedUserEmail = getUser();
-// console.log("Checking who's email is logged in: ",loggedUserEmail.email );
-// setLoggedUser(loggedUserEmail.email);
 
-// }, []);
+  //Testimonials
+  const [testimonials, setTestimonials] = useState([]);
 
 
 
@@ -309,6 +306,16 @@ const handleSubmit = async (e) => {
   }
 };
 
+
+
+  useEffect(() => {
+    const testimonials = axios.get("http://localhost:8080/api/feedbacks")
+      .then((res) => {
+        console.log("FETCHING TESTIMONIALS.......");
+        console.log("Fetched testimonials:", res.data);
+      setTestimonials(res.data);
+  })}, []);
+
     return (
         <>
             {/* Hero Section */}
@@ -512,7 +519,7 @@ const handleSubmit = async (e) => {
             </section>
 
             {/* Testimonial Section */}
-            <section id="testimonials" className="py-5 bg-light">
+            {/* <section id="testimonials" className="py-5 bg-light">
                 <div className="container py-4">
                     <div className="text-center mb-5">
                         <h2 className="h1 fw-bold mb-3">Guest Experiences</h2>
@@ -558,6 +565,61 @@ const handleSubmit = async (e) => {
                             </div>
                         ))}
                     </div>
+                </div>
+            </section> */}
+            
+          {/* Testimonial Section */}
+            <section id="testimonials" className="py-5 bg-light">
+                <div className="container py-4">
+                    <div className="text-center mb-5">
+                        <h2 className="h1 fw-bold mb-3">Guest Experiences</h2>
+                        <p className="text-muted mx-auto fs-5" style={{ maxWidth: "800px" }}>
+                            Hear what our guests have to say about their stay at Blue Belle Hotel And Resort
+                        </p>
+                        <div className="divider-primary mx-auto mt-3"></div>
+                    </div>
+                                <div className="row g-4">
+              {testimonials.map((feedback, i) => (
+                <div key={i} className="col-md-4">
+                  <div className="card h-100 p-4">
+                    
+                    {/* Rating stars */}
+                    <div className="mb-3">
+                      <div className="text-warning">
+                        {[...Array(feedback.rating)].map((_, i) => (
+                          <FaStar key={i} className="d-inline-block me-1" />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Message */}
+                    <p className="text-muted mb-4 fst-italic">
+                      "{feedback.message}"
+                    </p>
+
+                    {/* Name + avatar */}
+                    <div className="d-flex align-items-center">
+                      <div
+                        className="position-relative rounded-circle overflow-hidden me-3"
+                        style={{ width: "48px", height: "48px" }}
+                      >
+                        <img
+                          src="/public/assets/img/projectImgs/logo.png"
+                          alt=""
+                          className="w-100 h-100"
+                          style={{ objectFit: "cover" }}
+                        />
+                      </div>
+                      <div>
+                        <h4 className="h6 fw-semibold mb-0">{feedback.name}</h4>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              ))}
+            </div>
+ 
                 </div>
             </section>
 
