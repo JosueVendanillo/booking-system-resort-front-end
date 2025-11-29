@@ -10,6 +10,75 @@ function Register() {
   const [role, setRole] = useState('CUSTOMER'); // Default role is CUSTOMER
   const navigate = useNavigate();
 
+    const [errorFname, setErrorFname] = useState("");
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [confirmPasswordError, setConfirmPasswordError] = useState("");
+
+
+    // Real-time full name validation while typing - FNAME
+  const handleFullNameChange = (e) => {
+   const value = e.target.value;
+    setFullName(value);
+    if (!value) {
+      setErrorFname("Full Name is required");
+    }else if(value.length < 3){
+      setErrorFname("Full Name must be completed");
+    } 
+    else {
+      setErrorFname("");
+    };
+    }
+
+  // Real-time password validation while typing - EMAIL
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+
+    if (!value) {
+      setEmailError("Email is required");
+    } else if (!/^\S+@\S+\.\S+$/.test(value)) {
+      setEmailError("Invalid email format");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  // Real-time password validation while typing - PASSWORD
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+
+    if (!value) {
+      setPasswordError("Password is required");
+    } else if (value.length < 8) {
+      setPasswordError("Password must be at least 8 characters");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  // Real-time password validation while typing - PASSWORD
+  const handleConfirmPasswordChange = (e) => {
+    const value = e.target.value;
+    setConfirmPassword(value);
+
+    if (!value) {
+      setConfirmPasswordError("Password is required");
+    } else if (password != value) {
+      setConfirmPasswordError("Password didnt match");
+    } 
+    // else if(password == value){
+    //     setConfirmPasswordError("Password matched");    -- change the text & border color to green of the border if matched
+    // }
+     else {
+      setConfirmPasswordError("");
+    }
+  };
+  
+
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -63,14 +132,15 @@ function Register() {
                             <label htmlFor="fullName" className="form-label fw-semibold">Full Name</label>
                             <input
                                 type="text"
-                                className="form-control"
+                                className={`form-control ${errorFname ? "is-invalid" : ""}`}
                                 id="fullName"
                                 placeholder="Enter your full name"
                                 value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
+                                onChange={handleFullNameChange}
                                 required
                                 style={{ borderRadius: '10px' }}
                             />
+                            {errorFname && <div className="text-danger mt-1">{errorFname}</div>}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="email" className="form-label fw-semibold">Email</label>
@@ -80,36 +150,39 @@ function Register() {
                                 id="email"
                                 placeholder="Enter your email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={handleEmailChange}
                                 required
                                 style={{ borderRadius: '10px' }}
                             />
+                            {emailError && <div className="text-danger mt-1">{emailError}</div>}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="password" className="form-label fw-semibold">Password</label>
                             <input
                                 type="password"
-                                className="form-control"
+                                className={`form-control ${passwordError ? "is-invalid" : ""}`}
                                 id="password"
                                 placeholder="Enter your password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={handlePasswordChange}
                                 required
                                 style={{ borderRadius: '10px' }}
                             />
+                            {passwordError && <div className="text-danger mt-1">{passwordError}</div>}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="confirmPassword" className="form-label fw-semibold">Confirm Password</label>
                             <input
                                 type="password"
-                                className="form-control"
+                                className={`form-control ${confirmPasswordError ? "is-invalid" : ""}`}
                                 id="confirmPassword"
                                 placeholder="Confirm your password"
                                 value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                onChange={handleConfirmPasswordChange}
                                 required
                                 style={{ borderRadius: '10px' }}
                             />
+                            {confirmPasswordError && <div className="text-danger mt-1">{confirmPasswordError}</div>}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="userRole"className="form-label fw-semibold">User Role</label>
@@ -123,6 +196,8 @@ function Register() {
                                 <option value="CUSTOMER">Customer</option>
                                 <option value="ADMIN">Admin</option>
                                 <option value="MODERATOR">Moderator</option>
+                                <option value="MODERATOR">Receptionins</option>
+                                <option value="MODERATOR">Staff</option>
                             </select>
                         </div>
                         <button
