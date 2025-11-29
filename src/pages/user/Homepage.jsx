@@ -69,12 +69,12 @@ const getDefaultCheckout = (checkIn) => {
 
   const [loggedUser, setLoggedUser] = useState(null);
 
-useEffect(() => {
-const loggedUserEmail = getUser();
-console.log("Checking who's email is logged in: ",loggedUserEmail.email );
-setLoggedUser(loggedUserEmail.email);
+// useEffect(() => {
+// const loggedUserEmail = getUser();
+// console.log("Checking who's email is logged in: ",loggedUserEmail.email );
+// setLoggedUser(loggedUserEmail.email);
 
-}, []);
+// }, []);
 
 
 
