@@ -2,13 +2,13 @@ import React, {  useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { getUser, getUserRole, clearUser } from "../../utils/auth";
 import axios from "axios"; 
-
+import { TailSpin } from 'react-loader-spinner';
 
 function UserNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeSection, setActiveSection] = useState("");
-  const [user, setUser] = useState(getUser());
+  const [user, setUser] = useState(() => getUser());
   const [userRole, setRole] = useState(getUserRole() || "GUEST");
   const [showBookingHistory, setShowBookingHistory] = useState(false);
   const [bookings, setBookings] = useState([]); // booking history state
@@ -21,7 +21,13 @@ function UserNavbar() {
   const [names, setNames] = useState([]);
   const [fullName, setFullName] = useState("");
   const [bookingHistory, setBookingHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
 
+
+  useEffect(() => {
+    setTimeout(() => setLoading(false), 3000); // simulate API call
+  }, []);
+  
 
   // get email from localStorage
   useEffect(() => {
@@ -44,16 +50,23 @@ function UserNavbar() {
       console.log("Fetching bookings for email in Navbar: ", email);
 
       try {
-        const response = await axios.get(
-          `http://localhost:8080/api/customers/full-name/${email}`
-        );
+        const requestUrl = `http://localhost:8080/api/customers/full-name/${encodeURIComponent(
+          email
+        )}`;
+        console.log("Requesting URL:", requestUrl);
+        const response = await axios.get(requestUrl);
         console.log("Fetched bookings for email:", response.data);
-    
-
-        setNames(response.data);
+        // make sure names is always an array
+        setNames(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
-        console.error("Error fetching bookings by email:", error);
-      } 
+        console.error(
+          "Error fetching bookings by email:",
+          error?.response?.data || error?.message || error
+        );
+        setNames([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchBookingsByEmail();
@@ -191,7 +204,6 @@ useEffect(() => {
       const loggedUser = getUser();
       const role = getUserRole();
       if (loggedUser) {
-
         console.log("UserNavbar detected user change:", loggedUser);
         setUser(loggedUser);
         setRole(role);
@@ -200,13 +212,72 @@ useEffect(() => {
         setRole("GUEST");
       }
     };
+
+    // Listen for: app-level userChange, cross-tab storage events,
+    // and navigation events (back/forward & bfcache restores).
     window.addEventListener("userChange", handleUserChange);
     window.addEventListener("storage", handleUserChange);
+    window.addEventListener("popstate", handleUserChange);
+    window.addEventListener("pageshow", handleUserChange);
+
     return () => {
       window.removeEventListener("userChange", handleUserChange);
       window.removeEventListener("storage", handleUserChange);
+      window.removeEventListener("popstate", handleUserChange);
+      window.removeEventListener("pageshow", handleUserChange);
     };
   }, []);
+
+  useEffect(() => {
+    // Only prompt to log out if there is a logged-in user.
+    if (location.pathname === "/login") {
+      const currentUser = getUser();
+      if (!currentUser) return; // nothing to do when not logged in
+
+      const userConfirmed = window.confirm("You are currently logged in. Do you want to log out and continue to the login page?");
+
+      if (userConfirmed) {
+        clearUser();
+        setUser(null);
+        setRole("GUEST");
+        // notify other listeners
+        window.dispatchEvent(new Event("userChange"));
+        alert("You have been logged out.");
+      } else {
+        navigate(-1); // go back
+      }
+    }
+  }, [location.pathname, navigate]);
+
+  //   // ⭐ FIX 2: Always re-check auth when component becomes visible or user navigates back
+  // useEffect(() => {
+  //   const syncAuthState = () => {
+  //     const loggedUser = getUser();
+  //     const role = getUserRole();
+
+  //     if (loggedUser) {
+  //       setUser(loggedUser);
+  //       setRole(role);
+  //     } else {
+  //       setUser(null);
+  //       setRole("GUEST");
+  //     }
+  //   };
+
+  //   // Back/Forward navigation
+  //   window.addEventListener("popstate", syncAuthState);
+
+  //   // When page is restored from browser cache (bfcache)
+  //   window.addEventListener("pageshow", (event) => {
+  //     // event.persisted = true means browser loaded cached page
+  //     syncAuthState();
+  //   });
+
+  //   return () => {
+  //     window.removeEventListener("popstate", syncAuthState);
+  //   };
+  // }, []);
+
 
   useEffect(() => {
     const sections = document.querySelectorAll("section");
@@ -223,11 +294,34 @@ useEffect(() => {
     return () => observer.disconnect();
   }, [location]); // re-run on route change
 
-  const handleLogout = () => {
-    clearUser();
-    window.dispatchEvent(new Event("userChange"));
-    navigate("/login");
+const handleLogout = () => {
+  clearUser();
+  setUser(null);   // 🔥 force immediate UI update
+  setRole("GUEST");
+  window.dispatchEvent(new Event("userChange"));
+  navigate("/login", { replace: true });  // prevent going back
+};
+
+  // Handle Book Now click: show loader while navigating or scrolling
+  const handleBookNow = () => {
+    if (!user) {
+      setLoading(true);
+      // navigate to login — navbar remains mounted so spinner shows
+      navigate("/login");
+    } else {
+      // user already logged in: scroll to booking section
+
+      scrollToSection("booking-cta");
+      // hide loader after short delay (scroll completes)
+      setTimeout(() => setLoading(false), 700);
+    }
   };
+
+  // Clear loader when location changes (navigation finished)
+  useEffect(() => {
+    setLoading(false);
+  }, [location]);
+
 
   const scrollToSection = (id) => {
     if (location.pathname !== "/") {
@@ -247,9 +341,32 @@ useEffect(() => {
       navbarCollapse.classList.remove("show");
     }
   };
+  
 
   return (
     <>
+      {loading && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "rgba(255, 255, 255, 0.6)",
+          zIndex: 9999
+        }}>
+          <TailSpin
+            height="80"
+            width="80"
+            color="#4fa94d"
+            ariaLabel="tail-spin-loading"
+            visible={true}
+          />
+        </div>
+      )}
       <nav className="navbar navbar-expand-xl bg-white shadow sticky-top">
         <div className="container-xxl">
           <NavLink to="/" className="navbar-brand">
@@ -295,10 +412,7 @@ useEffect(() => {
                 <button
                   type="button"
                   className="btn btn-primary ms-xl-3"
-                  onClick={() => {
-                    if (!user) navigate("/login");
-                    else scrollToSection("booking-cta");
-                  }}
+                  onClick={handleBookNow}
                 >
                   Book Now
                 </button>
