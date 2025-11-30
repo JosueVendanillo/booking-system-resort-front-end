@@ -17,6 +17,8 @@ import {
 import PaymentChannel from '../../components/FormModal/PaymentChannelModal';
 import { getUser } from '../../utils/auth';
 
+import { TailSpin } from 'react-loader-spinner';
+
 function Homepage() {
   
 
@@ -25,7 +27,6 @@ const ADULT_PRICE = 300;
 const KID_PRICE = 150;
 
 const [roomCapacities, setRoomCapacities] = useState([]);
-const [agreed, setAgreed] = useState(false);
 const [showModal, setShowModal] = useState(false);
 const [roomType, setRoomType] = useState("");
 const [maxCapacity, setMaxCapacity] = useState("");
@@ -269,8 +270,7 @@ const handleSubmit = async (e) => {
      // Save booking temporarily
    localStorage.setItem("pendingBooking", JSON.stringify(payload));
 
-     // Open payment modal
-     setShowPaymentModal(true);
+    // Payment modal will be opened from the Terms modal (so Terms shows first)
 
     console.log("Booking saved:", response.data);
     console.log("Booking Code: ", response.data.bookingCode);
@@ -280,7 +280,15 @@ const handleSubmit = async (e) => {
 
 
     setSuccess("Booking successful!");
+
+    // show here the terms and conditions modal
+    
+    
+
+
     alert("Booking successful!");
+    // show Terms modal so user can read/acknowledge before payment
+    setShowModal(true);
 
     // Reset form
     setBooking({
@@ -1025,29 +1033,7 @@ const handleSubmit = async (e) => {
                                                </div>
                                                </section>
 
-    {/* --- Terms and Conditions --- */}
-                        <div className="col-12 mt-3">
-                            <div className="form-check">
-                                <input
-                                    type="checkbox"
-                                    className="form-check-input"
-                                    id="agree"
-                                    checked={agreed}
-                                    onChange={() => setAgreed(!agreed)}
-                                    required
-                                />
-                                <label className="form-check-label ms-2" htmlFor="agree">
-                                    I agree to the{" "}
-                                    <button
-                                        type="button"
-                                        className="btn btn-link p-0 text-primary"
-                                        onClick={() => setShowModal(true)}
-                                    >
-                                        Terms and Conditions
-                                    </button>
-                                </label>
-                            </div>
-                        </div>
+    {/* Terms and Conditions link removed from form - modal still available */}
 
                         {/* --- Terms and Conditions Modal --- */}
 {showModal && (
@@ -1055,8 +1041,7 @@ const handleSubmit = async (e) => {
         <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div className="modal-content">
                 <div className="modal-header bg-primary text-white">
-                    <h5 className="modal-title fw-semibold">Terms and Conditions</h5>
-                    <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
+                  <h5 className="modal-title fw-semibold">Terms and Conditions</h5>
                 </div>
                 <div className="modal-body" style={{ maxHeight: "70vh", overflowY: "auto" }}>
                     <h4 className="text-center text-primary mb-3">Welcome to Bluebelle Resort!</h4>
@@ -1123,7 +1108,17 @@ const handleSubmit = async (e) => {
                     </p>
                 </div>
                 <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      // user accepts terms and proceeds to payment
+                      setShowPaymentModal(true);
+                      setShowModal(false);
+                    }}
+                  >
+                    I Accept & Proceed to Payment
+                  </button>
                 </div>
             </div>
         </div>
