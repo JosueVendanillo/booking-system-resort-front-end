@@ -62,8 +62,7 @@ const getDefaultCheckout = (checkIn) => {
   };
 };
    
-
-  const [loading, setLoading] = useState(false);
+const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
@@ -74,6 +73,11 @@ const getDefaultCheckout = (checkIn) => {
   const [testimonials, setTestimonials] = useState([]);
 
 
+
+  useEffect(() => {
+    setTimeout(() => setLoading(false), 3000); // simulate API call
+  }, []);
+  
 
 // Update your booking state initialization
 const [booking, setBooking] = useState({
@@ -316,8 +320,63 @@ const handleSubmit = async (e) => {
       setTestimonials(res.data);
   })}, []);
 
+
+  const handleSubmitFeedback = async (e) => {
+            e.preventDefault();
+
+            if (!isLoggedIn()) {
+              alert("Please login first to make a booking.");
+              navigate("/login");
+              return;
+            }
+
+            const formData = {
+              name: e.target.name.value,
+              email: e.target.email.value,
+              rating: e.target.rating.value,
+              message: e.target.message.value,
+            };
+
+            try {
+              const response = await axios.post("http://localhost:8080/api/feedback", formData);
+              if (response.status === 200 || response.status === 201) {
+                alert("Thank you for your feedback!");
+                e.target.reset();
+              } else {
+                alert("Something went wrong. Please try again later.");
+              }
+            } catch (error) {
+              console.error("Error submitting feedback:", error);
+              alert("Failed to send feedback. Please check your connection or try again later.");
+            }
+          }
+
     return (
         <>
+
+              {loading && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "rgba(255, 255, 255, 0.6)",
+          zIndex: 9999
+        }}>
+          <TailSpin
+            height="80"
+            width="80"
+            color="#4fa94d"
+            ariaLabel="tail-spin-loading"
+            visible={true}
+          />
+        </div>
+      )}
+
             {/* Hero Section */}
             <section id="hero" className="text-center position-relative" style={{ backgroundImage: 'url("/assets/img/projectImgs/hero.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '70vh' }}>
                 <div className='position-absolute top-0 h-100 w-100 bg-dark' style={{ zIndex: 0, opacity: '60%' }}></div>
@@ -567,7 +626,7 @@ const handleSubmit = async (e) => {
                     </div>
                 </div>
             </section> */}
-            
+
           {/* Testimonial Section */}
             <section id="testimonials" className="py-5 bg-light">
                 <div className="container py-4">
@@ -1099,29 +1158,7 @@ const handleSubmit = async (e) => {
     <div className="row justify-content-center">
       <div className="col-lg-8">
         <form
-              onSubmit={async (e) => {
-            e.preventDefault();
-
-            const formData = {
-              name: e.target.name.value,
-              email: e.target.email.value,
-              rating: e.target.rating.value,
-              message: e.target.message.value,
-            };
-
-            try {
-              const response = await axios.post("http://localhost:8080/api/feedback", formData);
-              if (response.status === 200 || response.status === 201) {
-                alert("Thank you for your feedback!");
-                e.target.reset();
-              } else {
-                alert("Something went wrong. Please try again later.");
-              }
-            } catch (error) {
-              console.error("Error submitting feedback:", error);
-              alert("Failed to send feedback. Please check your connection or try again later.");
-            }
-          }}
+              onSubmit={handleSubmitFeedback}
           className="card shadow-lg border-0 p-4 rounded-4 bg-white"
         >
           <div className="row g-3">

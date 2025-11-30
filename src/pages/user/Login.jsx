@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { setUser } from '../../utils/auth';
+import { TailSpin } from 'react-loader-spinner';
 
 function Login() {
+  const [loader, setLoader] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
 
@@ -34,8 +36,6 @@ function Login() {
 
     if (!value) {
       setPasswordError("Password is required");
-    } else if (value.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
     } else {
       setPasswordError("");
     }
@@ -83,6 +83,30 @@ function Login() {
   const isInvalid = emailError || passwordError || !email || !password;
 
   return (
+    <>
+                  {loading && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "rgba(255, 255, 255, 0.6)",
+          zIndex: 9999
+        }}>
+          <TailSpin
+            height="80"
+            width="80"
+            color="#4fa94d"
+            ariaLabel="tail-spin-loading"
+            visible={true}
+          />
+        </div>
+      )}
+
     <div className="d-flex flex-column flex-md-row vh-100">
       {/* Left Side */}
       <div
@@ -155,6 +179,7 @@ function Login() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
