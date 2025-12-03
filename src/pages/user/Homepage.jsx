@@ -302,6 +302,7 @@ function Homepage() {
         // use midnight times for check-in/check-out (date-only semantics)
         checkIn: `${booking.checkInDate}T00:00:00`,
         checkOut: `${booking.checkOutDate}T00:00:00`,
+        // Leisure time ( DAY OR NIGHT)
         customer: {
           email: booking.customer.email,
           contactNumber: booking.customer.contactNumber,
