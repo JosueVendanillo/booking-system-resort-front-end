@@ -1,56 +1,106 @@
-import React,{useState } from "react";
+import React, { useEffect, useState } from "react";
 import gcashQR from "../../assets/images/gcash-qr.jpg";
 import bpibankQR from "../../assets/images/bpi-bank-qr.jpg";
 import axios from 'axios';
 
-function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalAmount,downpayment,adults, kids }) {
+function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalAmount, downpayment, adults, kids }) {
   if (!show) return null; // Don't render unless modal is open
 
-  const ADULT_PRICE = 150; // Example price per adult
-  const KID_PRICE = 100; // Example price per kid
-  const [selectedMethod, setSelectedMethod] = useState(""); // track selected method
-  const [peopleCost, setPeopleCost] = useState((adults * ADULT_PRICE) + (kids * KID_PRICE));
-  const [adultCount, setAdultCount] = useState(adults * ADULT_PRICE);
-  const [kidsCount, setKidsCountt] = useState(kids * KID_PRICE);
-  const [referenceNumber, setReferenceNumber] = useState("");
-  //  console.log("Guest Total Amount:", peopleCost);
 
+
+  const [adultPrice, setAdultPrice] = useState(0);
+  const [kidPrice, setKidPrice] = useState(0);
+
+  const [selectedMethod, setSelectedMethod] = useState(""); // track selected method
+  const [peopleCost, setPeopleCost] = useState(0);
+  const [adultCount, setAdultCount] = useState(0);
+  const [kidsCount, setKidsCountt] = useState(0);
+  const [referenceNumber, setReferenceNumber] = useState("");
+  const [booking, setBooking] = useState({
+    discountType: "",
+    discountProofs: []
+  });
+  const [uploadedImages, setUploadedImages] = useState([]);
+
+  // Handle multiple image uploads
+  const handleMultipleImages = (e) => {
+    const files = Array.from(e.target.files);
+    const imagesArray = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setUploadedImages((prevImages) => [...prevImages, ...imagesArray]);
+  }
 
   console.log("Booking Code in Modal:", bookingCode);
   console.log("Adults in Modal:", adults);
   console.log("Kids in Modal:", kids);
   console.log("Total Amount in Modal:", totalAmount);
   console.log("Downpayment in Modal:", downpayment);
-  console.log("Selected Method:", selectedMethod);
   console.log("-----");
 
-const handleConfirm = async () => {
+
+ useEffect(() => {
+    const response = async () => {
+      try {
+        const res = await axios.get('http://localhost:8080/api/prices/entrance-fee');
+      console.log("Entrance Fee Adult Data:", res.data.adultPrice);
+      console.log("Entrance Fee Kid Data:", res.data.kidPrice);
+        setAdultPrice(res.data.adultPrice);
+        setKidPrice(res.data.kidsPrice);
+        setAdultCount(adults * res.data.adultPrice);
+        setKidsCountt(kids * res.data.kidsPrice);
+        setPeopleCost((adults * res.data.adultPrice) + (kids * res.data.kidsPrice));
+
+      } catch (err) {
+        console.error("Error fetching entrance fees:", err);
+      }
+  }
+    response();
+  }
+, [adults, kids]);
+
+
+
+
+
+  const handleConfirm = async () => {
 
     // require reference number
-  if (!referenceNumber || !referenceNumber.trim()) {
-    alert("Please enter a reference number before confirming the payment.");
-    return;
+    if (!referenceNumber || !referenceNumber.trim()) {
+      alert("Please enter a reference number before confirming the payment.");
+      return;
+    }
+
+    try {
+      const payload = {
+        bookingCode: bookingCode,
+        amount: downpayment,
+        paymentMethod: selectedMethod,
+        referenceNumber: referenceNumber,
+        paymentDate: new Date().toISOString()
+      };
+
+      const response = await axios.post("http://localhost:8080/api/payments/payment-home-user", payload);
+
+      console.log("Payment saved:", response.data);
+      onPaymentDone(); // callback to Homepage
+      window.location.reload(); // reload to reflect changes
+    } catch (err) {
+      console.error("Payment failed:", err);
+      alert("Error occured, Please check the room if still not full. Thank you.");
+    }
+  };
+
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setBooking((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   }
 
-  try {
-    const payload = {
-      bookingCode: bookingCode,
-      amount: downpayment,
-      paymentMethod: selectedMethod,
-      referenceNumber: referenceNumber,
-      paymentDate: new Date().toISOString()
-    };
-
-    const response = await axios.post("http://localhost:8080/api/payments/payment-home-user", payload);
-
-    console.log("Payment saved:", response.data);
-    onPaymentDone(); // callback to Homepage
-    window.location.reload(); // reload to reflect changes
-  } catch (err) {
-    console.error("Payment failed:", err);
-    alert("Error occured, Please check the room if still not full. Thank you.");
-  }
-};
 
 
   return (
@@ -62,56 +112,155 @@ const handleConfirm = async () => {
             <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
           <div className="modal-body">
-             {/* Booking Summary */}
+            {/* Booking Summary */}
             <div className="alert alert-info text-center mb-4">
               <h6>Your Booking Code: <strong>{bookingCode}</strong></h6>
               <h6><strong>Total Adult Price:</strong> ₱{adultCount}</h6>
               <h6><strong>Total Kids Price:</strong> ₱{kidsCount}</h6>
-               <h6><strong>Total Entrance Price:</strong> ₱{peopleCost}</h6>
+              <h6><strong>Total Entrance:</strong> ₱{peopleCost}</h6>
               <h6>Total Amount: <strong>₱{Number(totalAmount).toLocaleString()}</strong></h6>
               <p className="mb-0">Minimum Downpayment (30%): <strong>₱{downpayment.toLocaleString()}</strong></p>
             </div>
 
+
+            
+            {/*
+            ---------------------------------------
+            For Discount Proof Upload
+            ---------------------------------------
+            Type of Discount:
+            - PWD
+            - Senior Citizen
+            - Birthday Promo
+            ---------------------------------------
+              
+            */}
+            <div className="col-md-6">
+              <label className="fw-medium d-block mb-2">Type of Discount</label>
+
+              <div className="d-flex gap-4">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="discountType"
+                    id="senior"
+                    value="Senior Citizen"
+                    checked={booking.discountType === "Senior Citizen"}
+                    onChange={handleChange}
+                  />
+                  <label className="form-check-label" htmlFor="senior">
+                    Senior Citizen
+                  </label>
+                </div>
+
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="discountType"
+                    id="pwd"
+                    value="PWD"
+                    checked={booking.discountType === "PWD"}
+                    onChange={handleChange}
+                  />
+                  <label className="form-check-label" htmlFor="pwd">
+                    PWD
+                  </label>
+                </div>
+
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="discountType"
+                    id="birthday"
+                    value="Birthday Promo"
+                    checked={booking.discountType === "Birthday Promo"}
+                    onChange={handleChange}
+                  />
+                  <label className="form-check-label" htmlFor="birthday">
+                    Birthday Promo
+                  </label>
+                </div>
+              </div>
+            </div>
+
+
+
+            {/* SHOW ONLY IF SENIOR OR PWD */}
+            {(booking.discountType === "Senior Citizen" ||
+              booking.discountType === "Birthday Promo" ||
+              booking.discountType === "PWD") && (
+                <div className="col-md-6">
+                  <label className="form-label fw-medium">Upload your Proof of Discount Here</label>
+
+                  <div className="custom-file">
+                    <input
+                      type="file"
+                      className="custom-file-input"
+                      id="customFile"
+                      name="images[]"
+                      accept="image/*"
+                      multiple
+                      onChange={handleMultipleImages}
+                    />
+                  </div>
+
+
+                </div>
+              )}
+            <div className="mt-3 d-flex flex-wrap gap-3">
+              {uploadedImages.map((img, index) => (
+                <div
+                  key={index}
+                  className="position-relative"
+                  style={{ width: "120px", height: "120px" }}
+                >
+                  {/* Thumbnail */}
+                  <img
+                    src={img.preview}
+                    alt="preview"
+                    className="img-thumbnail"
+                    style={{
+                      width: "120px",
+                      height: "120px",
+                      objectFit: "cover",
+                    }}
+                  />
+
+                  {/* Delete Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteImage(index)}
+                    className="btn btn-danger btn-sm position-absolute top-0 end-0"
+                    style={{
+                      transform: "translate(30%, -30%)",
+                      padding: "2px 6px",
+                      borderRadius: "50%",
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+
+
+
+
+            <div>
+              PAYMENT GATEWAY HERE......
+
+
+              Once done with the payment via paymongo, enter the reference number below and click confirm payment.
+            </div>
+
+
+
+            
             <div className="list-group">
               <div className="list-group-item">
-                  <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="GCash"
-                  checked={selectedMethod === "GCash"}
-                  onChange={(e) => setSelectedMethod(e.target.value)}
-                  className="form-check-input me-2"
-                />
-                <h5>GCash</h5>
-                <p>Send payment to: <strong>0917-123-4567</strong></p>
-                <img 
-                  src={gcashQR} 
-                  alt="GCash QR Code" 
-                  style={{ width: "200px", marginTop: "10px" }} 
-                />
-              </div>
-              <div className="list-group-item">
-                  <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="Bank Transfer"
-                  checked={selectedMethod === "Bank"}
-                  onChange={(e) => setSelectedMethod(e.target.value)}
-                  className="form-check-input me-2"
-                />
-                <h5>Bank Transfer</h5>
-                <p>
-                  Bank: BPI <br />
-                  Account Number: <strong>1234-5678-90</strong> <br />
-                  Account Name: Blue Belle Hotel
-                </p>
-                <img 
-                  src={bpibankQR} 
-                  alt="BPI Bank QR Code" 
-                  style={{ width: "200px", marginTop: "10px" }} 
-                />
-              </div>
-            <div className="list-group-item">
                 <h5>Enter Reference No.</h5>
                 <input
                   type="text"
@@ -120,16 +269,16 @@ const handleConfirm = async () => {
                   className="form-control mt-2"
                   value={referenceNumber} // ✅ controlled input
                   onChange={(e) => setReferenceNumber(e.target.value)} // ✅ update state
-              
+
                 />
                 <p>Please enter reference number of your online transactions.</p>
               </div>
             </div>
           </div>
 
-          
+
           <div className="modal-footer">
-              <button className="btn btn-secondary rounded-pill" onClick={onClose}>
+            <button className="btn btn-secondary rounded-pill" onClick={onClose}>
               Cancel
             </button>
             <button

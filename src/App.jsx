@@ -12,6 +12,7 @@ import Login from './pages/user/Login';
 import Register from './pages/user/Register';
 import RoomInventory from './pages/admin/RoomManagement';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
+import AdminLogin from './pages/user/AdminLogin';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -32,6 +33,7 @@ const router = createBrowserRouter(
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
       </Route>
     </>
   )

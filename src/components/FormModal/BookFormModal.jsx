@@ -451,6 +451,7 @@ const calculateTotalByGuests = (adults, kids) => {
                     className="form-control"
                     name="fullname"
                     value={formData.fullname}
+                    placeholder="Ex. Juan Dela Cruz"
                     onChange={handleChange}
                   />
 
