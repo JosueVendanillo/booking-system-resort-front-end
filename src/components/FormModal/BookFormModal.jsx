@@ -364,7 +364,8 @@ const calculateTotalByGuests = (adults, kids) => {
       customer: {
         fullname: formData.fullname,
         email: formData.email,
-        contactNumber: formData.contactNumber
+        contactNumber: formData.contactNumber,
+        gender: formData.gender
       }
     };
 
