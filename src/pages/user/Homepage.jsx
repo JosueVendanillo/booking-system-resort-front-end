@@ -117,7 +117,6 @@ function Homepage() {
   // Update your booking state initialization
   const [booking, setBooking] = useState({
     fullname: "",
-    gender: "",
     adults: 1,
     kids: 0,
     unitType: "",
@@ -126,7 +125,8 @@ function Homepage() {
     customer: {
       email: "",
       contactNumber: "",
-      createdBy: loggedUser || ""
+      createdBy: loggedUser || "",
+      gender: "",
     }
   });
 
@@ -294,7 +294,6 @@ function Homepage() {
       // Combine date + time into LocalDateTime strings
       const payload = {
         fullname: booking.fullname,
-
         adults: booking.adults,
         kids: booking.kids,
         // Use whichever was selected: room (`unitType`) or table (`tableType`).

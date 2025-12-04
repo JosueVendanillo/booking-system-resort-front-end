@@ -14,7 +14,7 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
   const [selectedMethod, setSelectedMethod] = useState(""); // track selected method
   const [peopleCost, setPeopleCost] = useState(0);
   const [adultCount, setAdultCount] = useState(0);
-  const [kidsCount, setKidsCountt] = useState(0);
+  const [kidsCount, setKidsCount] = useState(0);
   const [referenceNumber, setReferenceNumber] = useState("");
   const [booking, setBooking] = useState({
     discountType: "",
@@ -49,8 +49,8 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
         setAdultPrice(res.data.adultPrice);
         setKidPrice(res.data.kidsPrice);
         setAdultCount(adults * res.data.adultPrice);
-        setKidsCountt(kids * res.data.kidsPrice);
-        setPeopleCost((adults * res.data.adultPrice) + (kids * res.data.kidsPrice));
+        setKidsCount(kids * res.data.kidsPrice || 0);
+        setPeopleCost((adults * res.data.adultPrice) + (kids * res.data.kidsPrice) || 0);
 
       } catch (err) {
         console.error("Error fetching entrance fees:", err);
