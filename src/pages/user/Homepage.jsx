@@ -977,6 +977,43 @@ useEffect(() => {
                       />
                     </div>
 
+                      <div className="col-md-6">
+                        <label className="form-label fw-medium">Schedule</label>
+                        <div>
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="radio"
+                              name="schedule"
+                              id="daySwimming"
+                              value="Day Swimming"
+                              checked={booking.schedule === "Day Swimming"}
+                              onChange={handleChange}
+                              required
+                            />
+                            <label className="form-check-label" htmlFor="daySwimming">
+                              Day Swimming
+                            </label>
+                          </div>
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="radio"
+                              name="schedule"
+                              id="nightSwimming"
+                              value="Night Swimming"
+                              checked={booking.schedule === "Night Swimming"}
+                              onChange={handleChange}
+                              required
+                            />
+                            <label className="form-check-label" htmlFor="nightSwimming">
+                              Night Swimming
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+
                     {/* Room and Table selectors in a single row */}
                     <div className="col-12">
                       <div className="row g-3">
@@ -1224,6 +1261,10 @@ useEffect(() => {
                         rows="4"
                         className="form-control"
                         placeholder="Write your add ons here..."
+                        style={{
+                          overflow: "hidden",  // removes scrollbar
+                          resize: "none",      // prevents manual resize
+                        }}
                       ></textarea>
                     </div>
 
@@ -1235,6 +1276,10 @@ useEffect(() => {
                         className="form-control"
                         value={`Room Type: ${booking.unitType || "None"}\nTable Type: ${booking.tableType || "None"}\nCheck-in: ${booking.checkInDate || "N/A"}\nCheck-out: ${booking.checkOutDate || "N/A"}\nAdults: ${booking.adults || 0}\nKids: ${booking.kids || 0}\nSchedule: "DAY OR NIGHT"`}
                         readOnly
+                        style={{
+                          overflow: "hidden",  // removes scrollbar
+                          resize: "none",      // prevents manual resize
+                        }}
                       ></textarea>
                     </div>
 
