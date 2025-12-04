@@ -21,33 +21,14 @@ import { TailSpin } from 'react-loader-spinner';
 
 function Homepage() {
 
-  //   //Type of Discount - Will transfer to Payment Modal
-  //   //imageupload
-  // const [uploadedImages, setUploadedImages] = useState([]);
+  //   //Type of Discount - Will validate by the manager in the admin panel
 
-  // const handleMultipleImages = (e) => {
-  //   const files = Array.from(e.target.files);
 
-  //   const newImages = files.map((file) => ({
-  //     file,
-  //     preview: URL.createObjectURL(file),
-  //   }));
-
-  //   // Keep previously uploaded images + add new ones
-  //   setUploadedImages((prev) => [...prev, ...newImages]);
-  // };
-  // // Delete image by index
-  // const handleDeleteImage = (index) => {
-  //   setUploadedImages((prev) => prev.filter((_, i) => i !== index));
-  // };  
-
-  //pricing
-  const ADULT_PRICE = 300;
-  const KID_PRICE = 150;
+  const [entranceFee, setEntranceFee] = useState(null);
 
   const [roomCapacities, setRoomCapacities] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [roomType, setRoomType] = useState("");
+  const [roomDetails, setRoomDetails] = useState("");
   const [roomAvailability, setRoomAvailability] = useState({});
   
   const [showPriceList, setShowPriceList] = useState(false);
@@ -67,8 +48,6 @@ function Homepage() {
     { v: "garden-table", l: "Garden Table" }
   ];
 
-
-
   const navigate = useNavigate();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [bookingCode, setBookingCode] = useState("");
@@ -76,6 +55,18 @@ function Homepage() {
   const [downpayment, setDownpayment] = useState(0); // <-- NEW state
   const [adultCount, setAdultCount] = useState(0);
   const [kidsCount, setKidsCount] = useState(0);
+  
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  const [loggedUserEmail, setLoggedInEmail] = useState(null);
+
+  const [bookedDates, setBookedDates] = useState([]);
+
+
+  //Testimonials
+  const [testimonials, setTestimonials] = useState([]);
 
   // Add these helpers at the top of your component
   const formatDate = (date) => date.toLocaleDateString("en-CA");
@@ -96,17 +87,38 @@ function Homepage() {
     };
   };
 
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
-
-  const [loggedUser, setLoggedUser] = useState(null);
+  
 
 
-  //Testimonials
-  const [testimonials, setTestimonials] = useState([]);
 
 
+
+
+  useEffect(() => {
+    const response = axios.get("http://localhost:8080/api/prices/entrance-fee")
+      .then((res) => {
+        console.log("FETCHING PRICES.......");  
+        console.log("Fetched Prices:", res.data);
+        console.log("Entrance Fee Adult:", res.data.adultPrice);
+        console.log("Entrance Fee Kid:", res.data.kidsPrice);
+        setEntranceFee(res.data);
+      })
+  }, []);
+
+
+    // useEffect(() => {
+    //   console.log("UserNavbar detected user change, updating email.");
+    //   const loggedUser = getUser();
+    //   if (loggedUser && loggedUser.email) {
+  
+    //     console.log("Homepage: Logged in user email found: ", loggedUser.email);
+    //     setLoggedInEmail(loggedUser.email);
+    //   } else {
+    //     setLoggedInEmail("");
+    //   }
+    // }, []);
+  
+  
 
 
   useEffect(() => {
@@ -125,7 +137,7 @@ function Homepage() {
     customer: {
       email: "",
       contactNumber: "",
-      createdBy: loggedUser || "",
+      createdBy: loggedUserEmail || "",
       gender: "",
     }
   });
@@ -150,16 +162,40 @@ function Homepage() {
   };
 
 
-  // Handle simple field changes
+  // // Handle simple field changes
+  // const handleChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setBooking((prev) => ({
+  //     ...prev,
+  //     [name]: value
+  //   }));
+  //   // Console log every field change for debugging
+  //   console.log('[Booking field changed]', name, value);
+  // };
+
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
+  const { name, value } = e.target;
+
+  // If the field belongs to customer
+  if (name === "gender" || name === "contactNumber") {
+    setBooking((prev) => ({
+      ...prev,
+      customer: {
+        ...prev.customer,
+        [name]: value
+      }
+    }));
+  } else {
     setBooking((prev) => ({
       ...prev,
       [name]: value
     }));
-    // Console log every field change for debugging
-    console.log('[Booking field changed]', name, value);
-  };
+  }
+
+  console.log('[Booking field changed]', name, value);
+};
+
 
   // Handle nested customer field changes
   const handleCustomerChange = (e) => {
@@ -191,6 +227,62 @@ function Homepage() {
 
 
 
+  //fetching all bookings and filter the unit type and check the date availability by check-in and check-out
+
+  useEffect(() => {
+  const unit = booking.unitType || booking.tableType;
+  if (!unit) return;
+
+  axios
+    .get("http://localhost:8080/api/bookings/booked-dates", {
+      params: { unitType: unit }
+    })
+    .then((res) => {
+      setBookedDates(res.data); // store booked ranges
+    })
+    .catch((err) => console.error("Error loading booked dates", err));
+}, [booking.unitType, booking.tableType]);
+
+console.log("BOOKED DATES" + bookedDates)
+
+//   // const isDateBlocked = (date) => {
+//   //   return bookedDates.some(([start, end]) => {
+//   //     const d = new Date(date);
+//   //     const s = new Date(start);
+//   //     const e = new Date(end);
+//   //     return d >= s && d <= e;
+//   //   });
+//   // };
+
+//   const isDateBlocked = (date) => {
+//   return bookedDates.some(({ checkIn, checkOut }) => {
+//     const d = new Date(date);
+//     return d >= new Date(checkIn) && d <= new Date(checkOut);
+//   });
+// };
+
+const isDateBlocked = (date) => {
+  const d = new Date(date);
+
+  return bookedDates.some(({ checkIn, checkOut }) => {
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    return d >= start && d <= end;
+  });
+};
+
+
+
+
+useEffect(() => {
+    console.log("Fetching room details...");
+    const response = axios.get("http://localhost:8080/api/rooms/inventory")
+      .then((res) => {
+        console.log("Fetched room details:", res.data);
+        setRoomDetails(res.data);
+      })
+  }, []);
+
   useEffect(() => {
     const fetchAvailability = async () => {
       try {
@@ -210,9 +302,6 @@ function Homepage() {
     };
     fetchAvailability();
   }, []);
-
-
-
 
   useEffect(() => {
     const fetchRoomCapacities = async () => {
@@ -258,7 +347,7 @@ function Homepage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-
+    console.log("Is Logged In?", isLoggedIn());
     if (!isLoggedIn()) {
       alert("Please login first to make a booking.");
       navigate("/login");
@@ -277,12 +366,7 @@ function Homepage() {
       return;
     }
 
-    // ✅ Ask for confirmation first
-    const userConfirmed = window.confirm("Are you sure you want to submit the booking?");
-    if (!userConfirmed) {
-      // Stop submission if user clicks "Cancel"
-      return;
-    }
+
 
     console.log('Submitting booking (start)', booking);
     setLoading(true);
@@ -306,53 +390,103 @@ function Homepage() {
           email: booking.customer.email,
           contactNumber: booking.customer.contactNumber,
           gender: booking.customer.gender,
-          createdBy: loggedUser || ""
+          createdBy: loggedUserEmail || ""
         },
       };
       console.log('Booking payload', payload);
 
-      const response = await axios.post(
-        "http://localhost:8080/api/bookings",
-        payload
-      );
-
-
-      // ✅ Compute total cost (room + people)
-      const totalAmount = response.data.totalAmount || 0; // from backend
-      // const computedPeopleCost = booking.adults * ADULT_PRICE + booking.kids * KID_PRICE;
-      // const totalAmount = baseAmount + computedPeopleCost;
-      const kids = booking.kids || 0;
-      const adults = booking.adults || 0;
-
-      console.log('Booking response', response.data);
-
-      // Save bookingCode and totalAmount
-      setBookingCode(response.data.bookingCode);
-      setConfirmedAmount(totalAmount);
-      setDownpayment(totalAmount * 0.3);
-      // setPeopleCost(computedPeopleCost);
-      setAdultCount(adults);
-      setKidsCount(kids);
-
 
       // Save booking temporarily
       localStorage.setItem("pendingBooking", JSON.stringify(payload));
+      
+      console.log(localStorage.getItem("pendingBooking"));
+
+
+          // ✅ Ask for confirmation first
+    const userConfirmed = window.confirm("Are you sure you want to submit the booking?");
+    if (!userConfirmed) {
+      // Stop submission if user clicks "Cancel"
+      return;
+    }
+       setLoading(true);
+
+       //show terms and conditions modal first
+      setShowModal(true);
+
+      // Proceed with payment process
+      //Show Payment Modal
+      setShowPaymentModal(true);
+
+      alert("Proceeding to Payment")
+
+      // if(showPaymentModal){
+      //   setLoading(false);
+        
+      //   console.log("booking has been saved to backend")
+      // }
+
+         // below will be used  to show in Payment modal
+      // // ✅ Compute total cost (room + people)
+      // const totalAmount = response.data.totalAmount || 0; // from backend
+      const kids = booking.kids || 0;
+      const adults = booking.adults || 0;
+
+
+      if(roomDetails){
+        const selectedRoom = roomDetails.find(room => room.roomType === payload.unitType);
+        console.log("Selected Room Details:", selectedRoom);
+        if(selectedRoom){
+          const roomPrice = selectedRoom.roomRate || 0;
+          const computedPeopleCost = (adults * entranceFee.adultPrice) + (kids * entranceFee.kidsPrice);
+          const totalComputedAmount = roomPrice + computedPeopleCost;
+          const downpaymentAmount = totalComputedAmount * 0.3;
+          console.log("Room Price:", roomPrice);
+          console.log("Computed People Cost:", computedPeopleCost);
+          console.log("Total Computed Amount:", totalComputedAmount);
+          console.log("Downpayment Amount (30%):", downpaymentAmount);
+
+        setConfirmedAmount(totalComputedAmount);
+            setDownpayment(downpaymentAmount);
+
+            setAdultCount(adults);
+            setKidsCount(kids);
+        }
+      
+
+      // // Save bookingCode and totalAmount
+      // // setBookingCode(response.data.bookingCode);
+      // setConfirmedAmount(tempTotalAmount);
+      // setDownpayment(tempDownpaymentAmount);
+
+      // setAdultCount(adults);
+      // setKidsCount(kids);
+      
+
+      //        // Once the payment is completed, it will save to the backend
+      // const response = await axios.post(
+      //   "http://localhost:8080/api/bookings",
+      //   payload
+      // ); 
+
+    }
+
 
       // Payment modal will be opened from the Terms modal (so Terms shows first)
 
-      console.log("Booking saved:", response.data);
-      console.log("Booking Code: ", response.data.bookingCode);
-      console.log("Total Amount: ", totalAmount);
-      // console.log("People Cost: ", computedPeopleCost);
+      // console.log("Booking saved:", response.data);
+      // console.log("Booking Code: ", response.data.bookingCode);
+      // console.log("Total Amount: ", totalAmount);
+      // // console.log("People Cost: ", computedPeopleCost);
 
+      // console.log('Booking successful', { bookingCode: response.data.bookingCode, totalAmount: response.data.totalAmount });
+
+
+
+      
       setSuccess("Booking successful!");
-      console.log('Booking successful', { bookingCode: response.data.bookingCode, totalAmount: response.data.totalAmount });
-
-      // show here the terms and conditions modal
-
       alert("Booking successful!");
-      // show Terms modal so user can read/acknowledge before payment
-      setShowModal(true);
+
+
 
       // Reset form (date-only)
       setBooking({
@@ -806,7 +940,7 @@ function Homepage() {
                         className="form-select"
                         id="gender"
                         name="gender"
-                        value={booking.gender}
+                        value={booking.customer.gender}
                         onChange={handleChange}
                         required
                       >
@@ -933,7 +1067,16 @@ function Homepage() {
                           id="checkInDate"
                           name="checkInDate"
                           value={booking.checkInDate}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            const selected = e.target.value;
+
+                            if (isDateBlocked(selected)) {
+                              alert("This date is unavailable. Please choose another date.");
+                              return; // prevent selection
+                            }
+
+                            handleChange(e);
+                          }}
                           min={getToday()}
                           required
                           disabled={!(booking.unitType || booking.tableType)}
@@ -952,7 +1095,16 @@ function Homepage() {
                               id="checkOutDate"
                               name="checkOutDate"
                               value={booking.checkOutDate}
-                              onChange={handleChange}
+                              onChange={(e) => {
+                                const selected = e.target.value;
+
+                                if (isDateBlocked(selected)) {
+                                  alert("This date is unavailable. Please choose another date.");
+                                  return; // prevent selection
+                                }
+
+                                handleChange(e);
+                              }}
                               min={booking.checkInDate}
                               required
                               disabled={!(booking.unitType || booking.tableType)}

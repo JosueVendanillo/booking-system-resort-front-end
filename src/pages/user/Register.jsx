@@ -195,9 +195,8 @@ function Register() {
                             >
                                 <option value="CUSTOMER">Customer</option>
                                 <option value="ADMIN">Admin</option>
-                                <option value="MODERATOR">Moderator</option>
-                                <option value="MODERATOR">Receptionins</option>
-                                <option value="MODERATOR">Staff</option>
+                                <option value="MODERATOR">Manager</option>
+                                <option value="MODERATOR">Receptionist</option>
                             </select>
                         </div>
                         <button

@@ -34,7 +34,7 @@ function UserNavbar() {
     const loggedUser = getUser();
     if (loggedUser && loggedUser.email) {
 
-      console.log("!++Logged in user email found: ", loggedUser.email);
+      console.log("UserNavbar: Logged in user email found: ", loggedUser.email);
       setEmail(loggedUser.email);
     } else {
       setEmail("");

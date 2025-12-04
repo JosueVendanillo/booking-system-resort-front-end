@@ -11,7 +11,6 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
   const [adultPrice, setAdultPrice] = useState(0);
   const [kidPrice, setKidPrice] = useState(0);
 
-  const [selectedMethod, setSelectedMethod] = useState(""); // track selected method
   const [peopleCost, setPeopleCost] = useState(0);
   const [adultCount, setAdultCount] = useState(0);
   const [kidsCount, setKidsCount] = useState(0);
@@ -62,34 +61,57 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
 
 
 
+  const payload = JSON.parse(localStorage.getItem("pendingBooking"));
+
+  console.log("Payload before adding reference number:", payload);
 
 
   const handleConfirm = async () => {
 
-    // require reference number
-    if (!referenceNumber || !referenceNumber.trim()) {
-      alert("Please enter a reference number before confirming the payment.");
-      return;
-    }
 
-    try {
-      const payload = {
-        bookingCode: bookingCode,
-        amount: downpayment,
-        paymentMethod: selectedMethod,
-        referenceNumber: referenceNumber,
-        paymentDate: new Date().toISOString()
-      };
 
-      const response = await axios.post("http://localhost:8080/api/payments/payment-home-user", payload);
+       // Once the payment is completed, it will save to the backend
+      
+  
 
-      console.log("Payment saved:", response.data);
-      onPaymentDone(); // callback to Homepage
-      window.location.reload(); // reload to reflect changes
-    } catch (err) {
-      console.error("Payment failed:", err);
-      alert("Error occured, Please check the room if still not full. Thank you.");
-    }
+        const response = await axios.post(
+          "http://localhost:8080/api/bookings",
+          payload
+        ); 
+
+        alert("Booking Successful")
+   
+        onPaymentDone();
+        window.location.reload(); // reload to reflect changes
+
+      
+
+    // // require reference number
+    // if (!referenceNumber || !referenceNumber.trim()) {
+    //   alert("Please enter a reference number before confirming the payment.");
+    //   return;
+    // }
+
+    
+    // saved to payment management
+    // try {
+    //   const payload = {
+    //     bookingCode: bookingCode,
+    //     amount: downpayment,
+    //     paymentMethod: selectedMethod,
+    //     referenceNumber: referenceNumber,
+    //     paymentDate: new Date().toISOString()
+    //   };
+
+    //   const response = await axios.post("http://localhost:8080/api/payments/payment-home-user", payload);
+
+    //   console.log("Payment saved:", response.data);
+    //   onPaymentDone(); // callback to Homepage
+    //   window.location.reload(); // reload to reflect changes
+    // } catch (err) {
+    //   console.error("Payment failed:", err);
+    //   alert("Error occured, Please check the room if still not full. Thank you.");
+    // }
   };
 
 
@@ -101,6 +123,8 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
     }));
   }
 
+
+  
 
 
   return (
@@ -284,7 +308,7 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
             <button
               className="btn btn-primary rounded-pill"
               onClick={handleConfirm}
-              disabled={!selectedMethod || referenceNumber.trim().length === 0}
+              disabled={referenceNumber.trim().length === 0}
 
             >
               Confirm Payment
