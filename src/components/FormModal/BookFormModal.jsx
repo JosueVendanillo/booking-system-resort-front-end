@@ -1,168 +1,38 @@
 import axios from "axios";
-import React, { useEffect, useState, useRef  } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function BookFormModal({ setBookings, bookings, editingBooking, setEditingBooking }) {
-
-    // Helpers - local formatting instead of UTC
-    const formatDate = (date) => date.toLocaleDateString("en-CA"); // YYYY-MM-DD
-    const formatTime = (date) => date.toTimeString().slice(0, 5); // HH:mm
-
-    // Format for backend (ISO without milliseconds)
-    const formatDateTimeForBackend = (date) => {
+  const formatDate = (date) => date.toLocaleDateString("en-CA"); // YYYY-MM-DD
+  const formatTime = (date) => date.toTimeString().slice(0, 5); // HH:mm
+  const formatDateTimeForBackend = (date) => {
     const pad = (n) => n.toString().padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-    };
-
-
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  };
   const getToday = () => formatDate(new Date());
-  const getNowTime = () => formatTime(new Date());
-
-    const parseDateTimeLocal = (dateStr, timeStr) => {
+  const parseDateTimeLocal = (dateStr, timeStr) => {
     const [y, m, d] = (dateStr || getToday()).split("-").map(Number);
     const [hh, mm] = (timeStr || "00:00").split(":").map(Number);
-    return new Date(y, m - 1, d, hh, mm, 0); // seconds = 0
-    };
-
-
+    return new Date(y, m - 1, d, hh, mm, 0);
+  };
+  const dayStart = (date) => { const d = new Date(date); d.setHours(0,0,0,0); return d; };
+  const dayEnd = (date) => { const d = new Date(date); d.setHours(23,59,59,999); return d; };
   const getDefaultCheckout = (checkIn) => {
     const co = new Date(checkIn);
-    co.setHours(co.getHours() + 1);
-    return {
-      checkOutDate: formatDate(co),
-      checkOutTime: formatTime(co),
-    };
+    co.setHours(co.getHours() + 22); // 22-hour checkout
+    return { checkOutDate: formatDate(co), checkOutTime: formatTime(co) };
   };
 
-const [roomAvailability, setRoomAvailability] = useState({});
-const [userEmail, setUserEmail] = useState("");
-const [userContact, setUserContact] = useState("");
+  // --- state ---
+  const [roomAvailability, setRoomAvailability] = useState({});
+  const [customers, setCustomers] = useState([]);
+  const [roomCapacities, setRoomCapacities] = useState({});
+  const [bookedDates, setBookedDates] = useState([]);
+  const hasRun = useRef(false);
 
-const [customers, setCustomers] = useState([]); // fetched customers list
-const [editingId, setEditingId] = useState(null);
-
-const [roomCapacities, setRoomCapacities] = useState([]); // for capacity validation
-const [maxCapacity, setMaxCapacity] = useState(null); // current selected room max capacity
-
-const hasRun = useRef(false);
-
-
- // fetch customers once
-  useEffect(() => {
-    const fetchCustomerById = async () => {
-    // if (!editingId) return; // skip if no ID
-
-// if(editingBooking){
-//   setEditingId(editingBooking.id)
-// }
-
-    try {
-      // console.log("Fetching customer with ID:", editingBooking);
-      const resp = await axios.get(`http://localhost:8080/api/customers`);
-
-      
-      // If your backend returns a single object, not an array:
-      setCustomers(resp.data);
-      console.log("Fetched customer:", resp);
-    } catch (err) {
-      console.error("Error fetching customer:", err);
-      setCustomers([]);
-    }
-    };
-    fetchCustomerById();
-  }, []);
-
-
-  useEffect(() => {
-    const fetchAvailability = async () => {
-      try {
-        const res = await fetch("http://localhost:8080/api/rooms/room-availability");
-        if (!res.ok) throw new Error("Failed to fetch room availability");
-        const data = await res.json(); // expected array of arrays
-        const map = {};
-        data.forEach(([type, total, available]) => {
-          map[type] = Number(available);
-        });
-        setRoomAvailability(map);
-      } catch (err) {
-        console.error("Error fetching room availability:", err);
-      }
-    };
-    fetchAvailability();
-  }, []);
-
-// for adults and kids capacity validation
-  useEffect(() => {
-    const fetchRoomCapacities = async () => {
-      try {
-        const response = await axios.get("http://localhost:8080/api/rooms/room-capacities");
-      
-              // ✅ Convert array of arrays → object
-      const capacityMap = Object.fromEntries(response.data);
-          setRoomCapacities(capacityMap);
-          
-
-        console.log("Fetched room capacities:", response.data);
-      } catch (error) {
-        console.error("Error fetching room capacities:", error);
-      }
-    };
-
-    fetchRoomCapacities();
-  }, []);
-
-
-useEffect(() => {
-  if (roomCapacities && Object.keys(roomCapacities).length > 0) {
-    Object.entries(roomCapacities).forEach(([type, capacity]) => {
-      console.log("Checking type:", type);
-      console.log("Capacity:", capacity);
-    });
-  }
-}, [roomCapacities]);
-
-
-const calculateTotalByGuests = (adults, kids) => {
-  return adults * 150 + kids * 100; // <-- example formula
-};
-
-
-
-   // ✅ Iterate once the state is set
-  // useEffect(() => {
-  //   if (roomCapacities.length > 0) {
-  //     roomCapacities.forEach(([type, capacity]) => {
-  //       console.log("Checking type:", type);
-  //       console.log("Capacity:", capacity);
-  //     });
-  //   }
-  // }, [roomCapacities]);
-
-//   useEffect(() => {
-//   if (hasRun.current) return; // 👈 prevents second execution under StrictMode
-//   hasRun.current = true;
-
-//   console.log("#1 Room Capacities:", roomCapacities);
-//   console.log("Selected Unit Type:", formData.unitType);
-
-
-// }, []);
-
-
-//   useEffect(() => {
-
-//   console.log("#1 Room Capacities: ", roomCapacities);
-//   console.log("Selected Unit Type:", formData.unitType);
-
-//   // if (formData.unitType && roomCapacities.length > 0) {
-//   //   const match = roomCapacities.find(([type]) => type === formData.unitType);
-//   //   setMaxCapacity(match ? match[1] : null);
-//   // }
-// },
-// // [formData.unitType, roomCapacities]
-// );
-  
-
-  // Form state
   const [formData, setFormData] = useState({
     bookingCode: "",
     fullname: "",
@@ -172,68 +42,68 @@ const calculateTotalByGuests = (adults, kids) => {
     kids: 0,
     unitType: "",
     checkInDate: getToday(),
-    checkInTime: getNowTime(),
+    checkInTime: "14:00",
     checkOutDate: getToday(),
-    checkOutTime: getNowTime(),
-    totalAmount: 0
+    checkOutTime: "12:00",
+    totalAmount: 0,
+    leisureTime: "",
+    addOns: "",
   });
 
-  // Update checkout automatically whenever check-in changes
+  // --- fetch ---
+  useEffect(() => { axios.get("http://localhost:8080/api/customers").then(r => setCustomers(r.data || [])).catch(() => setCustomers([])); }, []);
+  useEffect(() => { axios.get("http://localhost:8080/api/rooms/room-capacities").then(r => setRoomCapacities(Object.fromEntries(r.data || []))).catch((e)=>console.error(e)); }, []);
+  useEffect(() => { fetch("http://localhost:8080/api/rooms/room-availability").then(r => r.ok? r.json() : Promise.reject("fail")).then(data => { const map={}; data.forEach(([type, total, available]) => (map[type]=Number(available))); setRoomAvailability(map); }).catch(err => console.error(err)); }, []);
   useEffect(() => {
-    const checkIn = parseDateTimeLocal(formData.checkInDate, formData.checkInTime);
-    const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
-    setFormData((prev) => ({
-      ...prev,
-      checkOutDate,
-      checkOutTime,
-    }));
-  }, [formData.checkInDate, formData.checkInTime]);
+    if (!formData.unitType) return;
+    axios.get("http://localhost:8080/api/bookings/booked-dates", { params: { unitType: formData.unitType } })
+      .then(res => setBookedDates(res.data || []))
+      .catch(err => { console.error(err); setBookedDates([]); });
+  }, [formData.unitType]);
 
-  // Update formData when editingBooking changes
+  const isSameBooking = (b) => editingBooking && b.id === editingBooking.id;
+  const isDateBlocked = (date) => {
+    if (!bookedDates.length) return false;
+    const s = dayStart(date), e = dayEnd(date);
+    return bookedDates.some(b => {
+      if (isSameBooking(b)) return false;
+      const bS = new Date(b.checkIn), bE = new Date(b.checkOut);
+      return !(bE < s || bS > e);
+    });
+  };
+
+const applyTableTimes = (dateStr, leisure) => {
+  if (!dateStr) return;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (leisure === "DAY") {
+    const ci = new Date(y,m-1,d,8,0,0), co = new Date(y,m-1,d,17,0,0);
+    setFormData(prev => ({ ...prev, checkInDate: formatDate(ci), checkInTime: formatTime(ci), checkOutDate: formatDate(co), checkOutTime: formatTime(co) }));
+  } else if (leisure === "NIGHT") {
+    const ci = new Date(y,m-1,d,19,0,0), next = new Date(y,m-1,d+1); 
+    next.setHours(4,0,0,0);
+    setFormData(prev => ({ ...prev, checkInDate: formatDate(ci), checkInTime: formatTime(ci), checkOutDate: formatDate(next), checkOutTime: formatTime(next) }));
+  }
+};
+
+
+  // --- editing booking ---
   useEffect(() => {
     if (editingBooking) {
-
-      console.log("EditingBooking id: " + editingBooking.id);
       const checkIn = new Date(editingBooking.checkIn);
       const checkOut = new Date(editingBooking.checkOut);
-
-
-      // Try to find matching customer from fetched customers
       let matchedCustomer = null;
-
-      // 1) booking may include nested customer object with id
       const bookingCustomerId = editingBooking?.customer?.id ?? editingBooking?.customerId ?? editingBooking?.customer_id;
-      if (bookingCustomerId != null) {
-        matchedCustomer = customers.find((c) => Number(c.id) === Number(bookingCustomerId));
-      }
-
-      // 2) match by email if present
+      if (bookingCustomerId != null) matchedCustomer = customers.find(c => Number(c.id) === Number(bookingCustomerId));
       if (!matchedCustomer && (editingBooking?.customer?.email || editingBooking?.email)) {
-        const targetEmail = (editingBooking.customer?.email || editingBooking.email || "").toString().toLowerCase();
-        matchedCustomer = customers.find((c) => c.email && c.email.toLowerCase() === targetEmail);
+        const targetEmail = (editingBooking.customer?.email || editingBooking.email || "").toLowerCase();
+        matchedCustomer = customers.find(c => c.email && c.email.toLowerCase() === targetEmail);
       }
-
-      // 3) fallback match by fullname
       if (!matchedCustomer && editingBooking?.fullname) {
-        const targetName = editingBooking.fullname.toString().toLowerCase();
-        matchedCustomer = customers.find((c) => c.fullname && c.fullname.toLowerCase() === targetName);
+        const targetName = editingBooking.fullname.toLowerCase();
+        matchedCustomer = customers.find(c => c.fullname && c.fullname.toLowerCase() === targetName);
       }
-
-      const emailVal =
-        matchedCustomer?.email ??
-        editingBooking.customer?.email ??
-        editingBooking.email ??
-        "";
-      const contactVal =
-        matchedCustomer?.contactNumber ??
-        editingBooking.customer?.contactNumber ??
-        editingBooking.contactNumber ??
-        "";
-   console.log("Customer:" + customers)
-      console.log("Editing Booking:", editingBooking);
-      console.log("email:", userEmail);
-      console.log("contactNumber:", userContact);
-
+      const emailVal = matchedCustomer?.email ?? editingBooking.customer?.email ?? editingBooking.email ?? "";
+      const contactVal = matchedCustomer?.contactNumber ?? editingBooking.customer?.contactNumber ?? editingBooking.contactNumber ?? "";
       setFormData({
         bookingCode: editingBooking.bookingCode || "",
         fullname: editingBooking.fullname || "",
@@ -246,179 +116,199 @@ const calculateTotalByGuests = (adults, kids) => {
         checkInTime: formatTime(checkIn),
         checkOutDate: formatDate(checkOut),
         checkOutTime: formatTime(checkOut),
-        totalAmount: editingBooking.totalAmount ?? 0
+        totalAmount: editingBooking.totalAmount ?? 0,
+        leisureTime: editingBooking.leisureTime || "",
+        addOns: editingBooking.addOns || ""
       });
-      
     } else {
       const checkIn = new Date();
-      const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
-      setFormData({
-        bookingCode: "",
-        fullname: "",
-        email: "",
-        contactNumber: "",
-        adults: 1,
-        kids: 0,
-        unitType: "",
-        checkInDate: formatDate(checkIn),
-        checkInTime: getNowTime(),
-        checkOutDate,
-        checkOutTime,
-      });
+      const def = getDefaultCheckout(checkIn);
+      setFormData(prev => ({ ...prev, bookingCode:"", fullname:"", email:"", contactNumber:"", adults:1, kids:0, unitType:"", checkInDate: formatDate(checkIn), checkInTime:"14:00", checkOutDate:def.checkOutDate, checkOutTime:def.checkOutTime, leisureTime:"", addOns:"" }));
     }
-  }, [editingBooking]);
+  }, [editingBooking, customers]);
 
-
-
-    const handleChange = (e) => {
-    const { name, value } = e.target;
-
-     // 🧠 If user is changing Adults or Kids count
-  if (name === "adults" || name === "kids") {
-    const nextValue = parseInt(value) || 0;
-
-    // Compute next total guests based on current formData
-    const nextData = { ...formData, [name]: nextValue };
-    const total = (parseInt(nextData.adults) || 0) + (parseInt(nextData.kids) || 0);
-
-    // Get the selected unit type and its capacity
-    const selectedType = nextData.unitType;
-    const max = roomCapacities[selectedType] || 99; // Default 99 if not selected yet
-
-    if (selectedType && total > max) {
-      alert(`Total guests (${total}) exceed the capacity (${max}) for ${selectedType}.`);
-      return; // ❌ Stop here, don't update the state
-    }
-
-
-   // ⭐ UPDATE TOTAL AMOUNT ONLY WHEN ADULTS/KIDS CHANGE
-  const updatedTotal = calculateTotalByGuests(nextData.adults, nextData.kids);
-
-  console.log("Updated Total Amount:", updatedTotal);
-
-  setFormData(prev => ({
-    ...prev,
-    [name]: nextValue,
-    totalAmount: updatedTotal   // ⭐ update here
-  }));
-
-  return;
-}
-
-
-    setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-
-
-  const resetCheckout = () => {
+  // Auto-update checkout for rooms
+  useEffect(() => {
+    const roomTypes = ["ktv-room","big-cabana","small-cabana","couple-room","family-room"];
+    if (!roomTypes.includes(formData.unitType)) return;
     const checkIn = parseDateTimeLocal(formData.checkInDate, formData.checkInTime);
     const { checkOutDate, checkOutTime } = getDefaultCheckout(checkIn);
-    setFormData((prev) => ({
-      ...prev,
-      checkOutDate,
-      checkOutTime,
-    }));
-  };
+    setFormData(prev => ({ ...prev, checkOutDate, checkOutTime }));
+  }, [formData.checkInDate, formData.checkInTime, formData.unitType]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
 
-    const checkIn = parseDateTimeLocal(formData.checkInDate, formData.checkInTime);
-    const checkOut = parseDateTimeLocal(formData.checkOutDate, formData.checkOutTime);
+  const updatePax = (field, delta) => {
+  setFormData(prev => {
+    const newValue = Math.max(0, (parseInt(prev[field]) || 0) + delta);
+    const total = (field === "adults" ? newValue : prev.adults) + (field === "kids" ? newValue : prev.kids);
+    const max = roomCapacities[prev.unitType] || 99;
 
-    if (checkOut <= checkIn) {
-      alert("Check-Out must be after Check-In.");
-      return;
+    if (prev.unitType && total > max) {
+      alert(`Total guests (${total}) exceed the capacity (${max}) for ${prev.unitType}.`);
+      return prev; // Don't update
     }
-
-    // Check overlapping bookings
-    const hasOverlap = bookings.some((b) => {
-      if (editingBooking && b.id === editingBooking.id) return false;
-      const sameUnit = b.unitType.toLowerCase() === formData.unitType.toLowerCase();
-      if (!sameUnit) return false;
-      const existingCheckIn = new Date(b.checkIn);
-      const existingCheckOut = new Date(b.checkOut);
-      return checkIn < existingCheckOut && checkOut > existingCheckIn;
-    });
-
-    // if (hasOverlap) {
-    //   alert("This booking overlaps with an existing booking for the same unit.");
-    //   return;
-    // }
+    return { ...prev, [field]: newValue };
+  });
+};
 
 
-        const selectedAvailable = roomAvailability[formData.unitType];
-    if (typeof selectedAvailable !== "undefined" && selectedAvailable === 0 && !(editingBooking && editingBooking.unitType === formData.unitType)) {
-      alert("Selected room type is currently unavailable. Please choose another room.");
-      return;
-    }
+  // Generic handleChange
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-    const payload = {
-      fullname: formData.fullname,
-      adults: Number(formData.adults) || 1,
-      kids: Number(formData.kids) || 0,
-      unitType: formData.unitType,
-      checkIn: formatDateTimeForBackend(checkIn),
-      checkOut: formatDateTimeForBackend(checkOut),
-      customer: {
-        fullname: formData.fullname,
-        email: formData.email,
-        contactNumber: formData.contactNumber,
-        gender: formData.gender
-      }
-    };
-
-    try {
-      let response;
-
-      if (editingBooking) {
-        response = await fetch(`http://localhost:8080/api/bookings/${editingBooking.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-      } else {
-        response = await fetch("http://localhost:8080/api/bookings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      if (!response.ok) {
-      
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Error response:", errorData);
-        // This will show a clean alert
-        alert(
-          `Error response: ${errorData.error || "Failed to save booking"}`
-        );
+    if (name === "adults" || name === "kids") {
+      const nextValue = parseInt(value) || 0;
+      const nextData = { ...formData, [name]: nextValue };
+      const total = (parseInt(nextData.adults) || 0) + (parseInt(nextData.kids) || 0);
+      const selectedType = nextData.unitType;
+      const max = roomCapacities[selectedType] || 99;
+      if (selectedType && total > max) {
+        alert(`Total guests (${total}) exceed the capacity (${max}) for ${selectedType}.`);
         return;
-      } 
-      // throw new Error("Failed to save booking");
+      }
+      const updatedTotal = calculateTotalByGuests(nextData.adults, nextData.kids);
+      setFormData((prev) => ({ ...prev, [name]: nextValue, totalAmount: updatedTotal }));
+      return;
+    }
 
-      const savedBooking = await response.json();
+    if (name === "unitType") {
+      const newUnit = value;
+      const maxCap = roomCapacities[newUnit] || 99;
+      const totalGuests = formData.adults + formData.kids;
 
-      if (editingBooking) {
-        setBookings(bookings.map((b) => (b.id === editingBooking.id ? savedBooking : b)));
-        setEditingBooking(null);
-        window.location.reload(); // Refresh page after delete
-      } else {
-        setBookings([...bookings, savedBooking]);
-        window.location.reload(); // Refresh page after add
+      // If total guests exceed new room capacity
+      if (totalGuests > maxCap) {
+        const proceed = window.confirm(
+          `The selected room (${newUnit.replace("-", " ")}) has a capacity of ${maxCap}. ` +
+          `Current total guests: ${totalGuests}. ` +
+          `Do you want to automatically adjust the number of guests to fit this room?`
+        );
+
+        if (!proceed) {
+          // User canceled, do not change unit type
+          return;
+        }
+
+        // Adjust guests to fit new capacity
+        let adjAdults = Math.min(formData.adults, maxCap);
+        let adjKids = Math.min(formData.kids, maxCap - adjAdults);
+
+        setFormData((prev) => ({
+          ...prev,
+          unitType: newUnit,
+          adults: adjAdults,
+          kids: adjKids,
+          checkInTime: isRoomType(newUnit) ? "14:00" : prev.checkInTime,
+          checkOutTime: isRoomType(newUnit) ? "12:00" : prev.checkOutTime,
+          leisureTime: isTableType(newUnit) ? prev.leisureTime : "",
+        }));
+
+        return;
       }
 
-      const modalElement = document.getElementById("modal_createEditBook");
-      const modal = window.bootstrap.Modal.getInstance(modalElement);
-      modal.hide();
-
-    } catch (err) {
-      console.error(err);
-      alert("Error saving booking. Please try again.");
+      // Normal update when total guests <= max capacity
+      setFormData((prev) => ({
+        ...prev,
+        unitType: newUnit,
+        checkInTime: isRoomType(newUnit) ? "14:00" : prev.checkInTime,
+        checkOutTime: isRoomType(newUnit) ? "12:00" : prev.checkOutTime,
+        leisureTime: isTableType(newUnit) ? prev.leisureTime : "",
+      }));
     }
+
+
+      // --- Leisure Time selection ---
+      if (name === "leisureTime") {
+        setFormData(prev => ({ ...prev, leisureTime: value }));
+        return;
+      }
+
+      // --- Check-in / Check-out / Add-ons / etc ---
+      setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+    // --- Auto-apply table times whenever relevant ---
+    useEffect(() => {
+      if (isTableType(formData.unitType) && formData.leisureTime && formData.checkInDate) {
+        applyTableTimes(formData.checkInDate, formData.leisureTime);
+      }
+    }, [formData.unitType, formData.leisureTime, formData.checkInDate]);
+
+  const isTableType = t=>["brown-table","colored-table","garden-table"].includes(t);
+  const isRoomType = t=>["ktv-room","big-cabana","small-cabana","couple-room","family-room"].includes(t);
+
+  const handlePickCheckInDate = (date) => {
+    if(!date) return;
+    const iso = date.toISOString().split("T")[0];
+    if(isTableType(formData.unitType)){
+      setFormData(prev=>({...prev, checkInDate: iso}));
+      if(formData.leisureTime) applyTableTimes(iso, formData.leisureTime);
+    } else { setFormData(prev=>({...prev, checkInDate: iso})); }
+  };
+
+  const handleRoomCheckInTime = (time) => {
+    if(time<"14:00"){ alert("Check-in cannot be earlier than 2:00 PM"); return; }
+    setFormData(prev=>({...prev, checkInTime: time}));
+    const checkIn = parseDateTimeLocal(formData.checkInDate, time);
+    const out = new Date(checkIn.getTime() + 22*60*60*1000);
+    setFormData(prev=>({...prev, checkOutDate: formatDate(out), checkOutTime: formatTime(out)}));
+  };
+
+  const handleSubmit = async(e)=>{
+    e.preventDefault();
+    const checkIn=parseDateTimeLocal(formData.checkInDate, formData.checkInTime);
+    const checkOut=parseDateTimeLocal(formData.checkOutDate, formData.checkOutTime);
+    if(checkOut<=checkIn){ alert("Check-Out must be after Check-In."); return; }
+
+    const roomTypes=["ktv-room","big-cabana","small-cabana","couple-room","family-room"];
+    if(roomTypes.includes(formData.unitType)&&formData.checkInTime<"14:00"){ alert("Room check-in cannot be earlier than 2 PM"); return; }
+
+    const hasOverlap = bookings.some(b=>{
+      if(editingBooking&&b.id===editingBooking.id) return false;
+      if(!b.unitType||!formData.unitType) return false;
+      if(b.unitType.toLowerCase()!==formData.unitType.toLowerCase()) return false;
+      const existingCheckIn=new Date(b.checkIn);
+      const existingCheckOut=new Date(b.checkOut);
+      return checkIn<existingCheckOut && checkOut>existingCheckIn;
+    });
+    if(hasOverlap){ alert("This booking overlaps with an existing booking for the same unit."); return; }
+
+    const selectedAvailable=roomAvailability[formData.unitType];
+    if(typeof selectedAvailable!=="undefined"&&selectedAvailable===0&&!(editingBooking&&editingBooking.unitType===formData.unitType)){
+      alert("Selected room type is currently unavailable."); return;
+    }
+
+    const payload={ 
+      fullname:formData.fullname, adults:Number(formData.adults)||1, kids:Number(formData.kids)||0, unitType:formData.unitType, checkIn:formatDateTimeForBackend(checkIn), checkOut:formatDateTimeForBackend(checkOut), leisureTime:formData.leisureTime, addOns:formData.addOns, customer:{ fullname:formData.fullname, email:formData.email, contactNumber:formData.contactNumber } };
+
+    try{
+      let response;
+      if(editingBooking){
+        response=await fetch(`http://localhost:8080/api/bookings/${editingBooking.id}`,{method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
+      }else{
+        response=await fetch("http://localhost:8080/api/bookings",{method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
+      }
+      if(!response.ok){ const errorData=await response.json().catch(()=>({})); console.error("Error response:", errorData); alert(`Error response: ${errorData.error||"Failed to save booking"}`); return; }
+      const savedBooking=await response.json();
+      if(editingBooking){ setBookings(bookings.map(b=>b.id===editingBooking.id?savedBooking:b)); setEditingBooking(null); window.location.reload(); }else{ setBookings([...bookings,savedBooking]); window.location.reload(); }
+      const modalElement=document.getElementById("modal_createEditBook");
+      const modal=window.bootstrap?.Modal.getInstance(modalElement); modal?.hide();
+    }catch(err){ console.error(err); alert("Error saving booking. Please try again."); }
+  };
+
+
+
+  const isTableBooked = () => {
+  if (!isTableType(formData.unitType) || !formData.checkInDate) return false;
+  const s = dayStart(parseDateTimeLocal(formData.checkInDate, "00:00"));
+  const e = dayEnd(parseDateTimeLocal(formData.checkInDate, "23:59"));
+  return bookedDates.some(b => {
+    if (editingBooking && b.id === editingBooking.id) return false;
+    const bS = new Date(b.checkIn);
+    const bE = new Date(b.checkOut);
+    return !(bE < s || bS > e);
+  });
+};
 
 
   return (
@@ -426,243 +316,115 @@ const calculateTotalByGuests = (adults, kids) => {
       <div className="modal-dialog modal-md modal-dialog-scrollable" role="document">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">{editingBooking ? "Edit Booking" : "Add new booking"}</h5>
-            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <h5 className="modal-title">{editingBooking?"Edit Booking":"Add new booking"}</h5>
+            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
           </div>
-
           <div className="modal-body">
             <form className="row" onSubmit={handleSubmit}>
-               {/* Booking Code (read-only, only when editing) */}
-              {editingBooking && (
-                <div className="col-12 mb-3">
-                  <label className="form-label">Booking Code</label>
-                  <input
-                    className="form-control"
-                    name="bookingCode"
-                    value={formData.bookingCode}
-                    readOnly
-                  />
-                </div>
-              )}
 
-              {/* User Select */}
+              {/* Fullname / Email / Contact */}
               <div className="col-12 mb-3">
                 <label className="form-label">Fullname</label>
-                  <input
-                    className="form-control"
-                    name="fullname"
-                    value={formData.fullname}
-                    placeholder="Ex. Juan Dela Cruz"
-                    onChange={handleChange}
-                  />
-
-                {/* <select className="form-select" name="fullname" value={formData.fullname} onChange={handleChange}>
-                  <option value="">Select user</option>
-                  <option value="John Doe">John Doe</option>
-                  <option value="Wick John">Wick John</option>
-                  <option value="Tupe D">Tupe D</option>
-                  <option value="Cassy G">Cassy G</option>
-                </select> */}
+                <input className="form-control" name="fullname" value={formData.fullname} onChange={handleChange} placeholder="Ex. Juan Dela Cruz" />
+              </div>
+              <div className="col-6 mb-3">
+                <label className="form-label">Email</label>
+                <input className="form-control" type="email" name="email" value={formData.email} onChange={handleChange} disabled={!!editingBooking} />
+              </div>
+              <div className="col-6 mb-3">
+                <label className="form-label">Contact Number</label>
+                <input className="form-control" name="contactNumber" value={formData.contactNumber} onChange={handleChange} disabled={!!editingBooking} />
               </div>
 
-              {/* Email */}
-            <div className="col-6 mb-3">
-              <label className="form-label">Email</label>
-              <input
-                className="form-control"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={!!editingBooking} // Disable if editing
-              />
-                {editingBooking && (
-                <small className="text-muted">
-                  To update email, go to Customer Management.
-                </small>
-              )}
-            </div>
-
-            {/* Contact */}
-          <div className="col-6 mb-3">
-            <label className="form-label">Contact Number</label>
-            <input
-              className="form-control"
-              name="contactNumber"
-              value={formData.contactNumber}
-              onChange={handleChange}
-              disabled={!!editingBooking} // Disable if editing
-            />
-              {editingBooking && (
-                <small className="text-muted">
-                  To update contact number, go to Customer Management.
-                </small>
-              )}
-          </div>
-
-              {/* Adults */}
+              {/* Adults / Kids */}
               <div className="col-6 mb-3">
                 <label className="form-label">Adults</label>
                 <div className="input-group">
-                  <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, adults: Math.max(1, (parseInt(prev.adults) || 1) - 1) }))}>-</button>
-                  <input type="text" className="form-control text-center" name="adults" value={formData.adults || 1} min={1} max={20} onChange={handleChange} />
-                  <button type="button" className="btn btn-outline-secondary" 
-                   onClick={() =>
-                    setFormData((prev) => {
-                      const nextAdults = Math.min(20, (parseInt(prev.adults) || 1) + 1);
-                      const total = nextAdults + (parseInt(prev.kids) || 0);
-
-                      const selectedType = prev.unitType;
-                      const max = roomCapacities[selectedType] || 99; // default large value if not selected
-
-                      if (total > max) {
-                        alert(`Total guests (${total}) exceed capacity (${max}) for ${selectedType}.`);
-                        return prev; // do not update
-                      }
-
-                      return { ...prev, adults: nextAdults };
-                    })
-                  }
-                  >
-                    +
-                  </button>
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => updatePax("adults", -1)}>-</button>
+                  <input type="text" className="form-control text-center" name="adults" value={formData.adults||1} onChange={handleChange} />
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => updatePax("adults", 1)}>+</button>
                 </div>
               </div>
-
-              {/* Kids */}
               <div className="col-6 mb-3">
                 <label className="form-label">Kids</label>
                 <div className="input-group">
-                  <button type="button" className="btn btn-outline-secondary" onClick={() => setFormData(prev => ({ ...prev, kids: Math.max(0, (parseInt(prev.kids) || 0) - 1) }))}>-</button>
-                  <input type="text" className="form-control text-center" name="kids" value={formData.kids || 0} min={1} max={20} onChange={handleChange} />
-                  <button type="button" className="btn btn-outline-secondary" 
-                  onClick={() =>
-                    setFormData((prev) => {
-                      const nextKids = Math.min(20, (parseInt(prev.kids) || 0) + 1);
-                      const total = (parseInt(prev.adults) || 0) + nextKids;
-
-                      const selectedType = prev.unitType;
-                      const max = roomCapacities[selectedType] || 99;
-
-                      if (total > max) {
-                        alert(`Total guests (${total}) exceed capacity (${max}) for ${selectedType}.`);
-                        return prev;
-                      }
-
-                      return { ...prev, kids: nextKids };
-                    })
-                  }
-                  >
-                    +
-                  </button>
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => updatePax("kids", -1)}>-</button>
+                  <input type="text" className="form-control text-center" name="kids" value={formData.kids||0} onChange={handleChange} />
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => updatePax("kids", 1)}>+</button>
                 </div>
               </div>
 
               {/* Unit Type */}
-              {/* <div className="col-12 mb-3">
+              <div className="col-12 mb-3">
                 <label className="form-label">Select Type</label>
                 <select className="form-select" name="unitType" value={formData.unitType} onChange={handleChange}>
-                  <option value="" disabled>Select Room</option>
-                  <option value="ktv-room">KTV Room</option>
-                  <option value="big-cabana">Big Cabana</option>
-                  <option value="small-cabana">Small Cabana</option>
-                  <option value="brown-table">Brown Table</option>
-                  <option value="colored-table">Colored Table</option>
-                  <option value="garden-table">Garden Table</option>
-                  <option value="couple-room">Couple Room (Private)</option>
-                  <option value="family-room">Family Room (Private)</option>
-                </select>
-              </div> */}
-
-               <div className="col-12 mb-3">
-                <label className="form-label">Select Type</label>
-{/* -               <select className="form-select" name="unitType" value={formData.unitType} onChange={handleChange}>
--                  <option value="" disabled>Select Room</option>
--                  <option value="ktv-room">KTV Room</option>
--                  <option value="big-cabana">Big Cabana</option>
--                  <option value="small-cabana">Small Cabana</option>
--                  <option value="brown-table">Brown Table</option>
--                  <option value="colored-table">Colored Table</option>
--                  <option value="garden-table">Garden Table</option>
--                  <option value="couple-room">Couple Room (Private)</option>
--                  <option value="family-room">Family Room (Private)</option>
--                </select> */}
-                <select className="form-select" name="unitType" value={formData.unitType} onChange={handleChange}>
-                  <option value="" disabled>Select Room</option>
+                  <option value="" disabled>Select Room/Table</option>
                   {[
-                    { v: "ktv-room", l: "KTV Room" },
-                    { v: "big-cabana", l: "Big Cabana" },
-                    { v: "small-cabana", l: "Small Cabana" },
-                    { v: "brown-table", l: "Brown Table" },
-                    { v: "colored-table", l: "Colored Table" },
-                    { v: "garden-table", l: "Garden Table" },
-                    { v: "couple-room", l: "Couple Room (Private)" },
-                    { v: "family-room", l: "Family Room (Private)" },
-                  ].map(({ v, l }) => {
-                    const available = roomAvailability[v];
-                    const capacity = roomCapacities[v]; // ✅ get max capacity
-                    const disabled =
-                      typeof available !== "undefined" &&
-                      available === 0 &&
-                      !(editingBooking && editingBooking.unitType === v);
-
-                    return (
-                      <option key={v} value={v} disabled={disabled}>
-                        {l}
-                        {typeof capacity !== "undefined" ? ` — Max ${capacity} guests` : ""}
-                        {typeof available !== "undefined" ? ` — ${available} available` : ""}
-                        {disabled ? " (Unavailable)" : ""}
-                      </option>
-                    );
-                  })}
+                    {v:"ktv-room", l:"KTV Room"},
+                    {v:"big-cabana", l:"Big Cabana"},
+                    {v:"small-cabana", l:"Small Cabana"},
+                    {v:"couple-room", l:"Couple Room"},
+                    {v:"family-room", l:"Family Room"},
+                    {v:"brown-table", l:"Brown Table"},
+                    {v:"colored-table", l:"Colored Table"},
+                    {v:"garden-table", l:"Garden Table"}
+                  ].map(opt=><option key={opt.v} value={opt.v}>{opt.l}</option>)}
                 </select>
               </div>
 
-              {/* Check In */}
-              <div className="mb-3">
-                <h5 className="mb-1">Check In</h5>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Date</label>
-                    <input className="form-control" type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} min={getToday()} 
-                    // disabled={!!editingBooking} 
-                    />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Time</label>
-                    <input className="form-control" type="time" name="checkInTime" value={formData.checkInTime} onChange={handleChange} min={
-                      !editingBooking && formData.checkInDate === getToday()
-                        ? getNowTime()
-                        : "00:00"
-                    } 
-                    // disabled={!!editingBooking} // Disable if editing
-                    />
-                  </div>
+              {/* Leisure time for tables */}
+              {isTableType(formData.unitType) && !isTableBooked() && (
+                <div className="col-12 mb-3">
+                  <label className="form-label">Leisure Time</label>
+                  <select className="form-select" name="leisureTime" value={formData.leisureTime} onChange={handleChange}>
+                    <option value="">Select</option>
+                    <option value="DAY">Day (8AM - 5PM)</option>
+                    <option value="NIGHT">Night (7PM - 4AM)</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Check-in / Check-out */}
+              <div className="col-6 mb-3">
+                <label className="form-label">Check-In</label>
+                <input type="date" className="form-control" name="checkInDate" value={formData.checkInDate} onChange={handleChange} />
+                {isRoomType(formData.unitType) && <input type="time" className="form-control mt-1" name="checkInTime" value={formData.checkInTime} onChange={e=>handleRoomCheckInTime(e.target.value)} />}
+              </div>
+              <div className="col-6 mb-3">
+                <label className="form-label">Check-Out</label>
+                <input type="date" className="form-control" name="checkOutDate" value={formData.checkOutDate} onChange={handleChange} />
+                {isRoomType(formData.unitType) && <input type="time" className="form-control mt-1" name="checkOutTime" value={formData.checkOutTime} readOnly />}
+              </div>
+
+              {/* Add-ons */}
+              <div className="col-12 mb-3">
+                <label className="form-label">Add-ons</label>
+                <textarea className="form-control" name="addOns" value={formData.addOns} onChange={handleChange} rows={2}></textarea>
+              </div>
+
+              {/* Summary Card */}
+              <div className="col-12 mb-3">
+                <label className="form-label">Booking Summary</label>
+                <div className="card bg-light border shadow-sm p-3">
+                  <p className="mb-1"><strong>Name:</strong> {formData.fullname}</p>
+                  <p className="mb-1"><strong>Email:</strong> {formData.email}</p>
+                  <p className="mb-1"><strong>Contact:</strong> {formData.contactNumber}</p>
+                  <p className="mb-1"><strong>Unit Type:</strong> {formData.unitType}</p>
+                  <p className="mb-1"><strong>Guests:</strong> {formData.adults} adult(s), {formData.kids} kid(s)</p>
+                  <p className="mb-1"><strong>Check-In:</strong> {formData.checkInDate} {formData.checkInTime}</p>
+                  <p className="mb-1"><strong>Check-Out:</strong> {formData.checkOutDate} {formData.checkOutTime}</p>
+                  {isTableType(formData.unitType) && (
+                    <p className="mb-1"><strong>Leisure Time:</strong> {formData.leisureTime || "N/A"}</p>
+                  )}
+                  <p className="mb-1"><strong>Add-Ons:</strong> {formData.addOns || "None"}</p>
+                  <p className="mb-0"><strong>Total Amount:</strong> Php {formData.totalAmount}</p>
                 </div>
               </div>
 
-              {/* Check Out */}
-              <div className="mb-3">
-                <h5 className="mb-1">Check Out</h5>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Date</label>
-                    <input className="form-control" type="date" name="checkOutDate" value={formData.checkOutDate} onChange={handleChange} min={formData.checkInDate} />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Time</label>
-                    <input className="form-control" type="time" name="checkOutTime" value={formData.checkOutTime} onChange={handleChange} min={formData.checkOutDate === formData.checkInDate ? formData.checkInTime : "00:00"} />
-                  </div>
-                </div>
-                <button type="button" className="btn btn-sm btn-warning" onClick={resetCheckout}>
-                  Reset Checkout (Current Date & Time)
-                </button>
-              </div>
 
-              {/* Footer */}
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" className="btn btn-primary ms-2">Save Changes</button>
+
+              <div className="col-12 text-end">
+                <button type="submit" className="btn btn-primary">{editingBooking?"Update":"Book"}</button>
               </div>
             </form>
           </div>

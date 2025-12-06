@@ -169,6 +169,8 @@ const handleCancel = async (booking) => {
                   <th className="text-center">Adults</th>
                   <th className="text-center">Kids</th>
                   <th className="text-center">No. of day(s)</th>
+                  <th className="text-center">Leisure Time</th>
+                  <th className="text-center">Add-ons</th>
                   <th className="text-center">Total Amount</th>
                   <th className="text-center">Payment Status</th>
                   <th className="text-center">Booking Status</th>
@@ -197,6 +199,12 @@ const handleCancel = async (booking) => {
                             ? b.noOfDays + " day"
                             : b.noOfDays + " days"
                           : "-"}
+                      </td>
+                      <td className="text-center">
+                        {b.leisureTime}
+                      </td>
+                      <td className="text-center">
+                        {b.addOns}
                       </td>
                       <td className="text-center">
                         Php{b.totalAmount?.toLocaleString() || 0}
