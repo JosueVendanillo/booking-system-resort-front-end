@@ -67,10 +67,10 @@ function Login() {
         setUser(userData);
         window.dispatchEvent(new Event("userChange"));
 
-        if (userData.role === "ADMIN" || userData.role === "MODERATOR") {
-          navigate("/admin/dashboard");
-        } else {
+        if (userData.role === "CUSTOMER") {
           navigate("/");
+        } else {
+          alert("ACCESS DENIED. ROLE IS NOT SUPPORTED")
         }
       }
     } catch (error) {
