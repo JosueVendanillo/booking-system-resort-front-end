@@ -85,7 +85,7 @@ useEffect(() => {
           const response = await axios.get(
              `http://localhost:8080/api/bookings/by-name?name=${encodeURIComponent(name)}`
           );
-          console.log(`Fetched bookings for ${name}:`, response.data);
+          // console.log(`Fetched bookings for ${name}:`, response.data);
 
           // Ensure response.data is an array, otherwise fallback to empty array
           return Array.isArray(response.data) ? response.data : [];

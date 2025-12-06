@@ -17,6 +17,7 @@ import {
 import PaymentChannel from '../../components/FormModal/PaymentChannelModal';
 import { getUser } from '../../utils/auth';
 
+
 import { TailSpin } from 'react-loader-spinner';
 
 function Homepage() {
@@ -134,6 +135,8 @@ function Homepage() {
     unitType: "",
     checkInDate: getToday(),
     checkOutDate: getToday(),
+    leisureTime:"",
+    addOns:"",
     customer: {
       email: "",
       contactNumber: "",
@@ -163,15 +166,15 @@ function Homepage() {
 
 
   // // Handle simple field changes
-  // const handleChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setBooking((prev) => ({
-  //     ...prev,
-  //     [name]: value
-  //   }));
-  //   // Console log every field change for debugging
-  //   console.log('[Booking field changed]', name, value);
-  // };
+  const handleDayNightChange = (e) => {
+    const { name, value } = e.target;
+    setBooking((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+    // Console log every field change for debugging
+    console.log('[Booking field changed]', name, value);
+  };
 
 
   const handleChange = (e) => {
@@ -230,6 +233,8 @@ function Homepage() {
   //fetching all bookings and filter the unit type and check the date availability by check-in and check-out
 
   useEffect(() => {
+
+  console.log("FETCHED FROM HOMEPAGE.........")
   const unit = booking.unitType || booking.tableType;
   if (!unit) return;
 
@@ -385,7 +390,8 @@ useEffect(() => {
         // use midnight times for check-in/check-out (date-only semantics)
         checkIn: `${booking.checkInDate}T00:00:00`,
         checkOut: `${booking.checkOutDate}T00:00:00`,
-        // Leisure time ( DAY OR NIGHT)
+        leisureTime:`${booking.leisureTime}`,
+        addOns:`${booking.addOns}`,
         customer: {
           email: booking.customer.email,
           contactNumber: booking.customer.contactNumber,
@@ -497,6 +503,7 @@ useEffect(() => {
         unitType: "",
         checkInDate: getToday(),
         checkOutDate: getToday(),
+        leisureTime:"",
         customer: {
           email: "",
           contactNumber: ""
@@ -977,41 +984,20 @@ useEffect(() => {
                       />
                     </div>
 
-                      <div className="col-md-6">
-                        <label className="form-label fw-medium">Schedule</label>
-                        <div>
-                          <div className="form-check">
-                            <input
-                              className="form-check-input"
-                              type="radio"
-                              name="schedule"
-                              id="daySwimming"
-                              value="Day Swimming"
-                              checked={booking.schedule === "Day Swimming"}
-                              onChange={handleChange}
-                              required
-                            />
-                            <label className="form-check-label" htmlFor="daySwimming">
-                              Day Swimming
-                            </label>
-                          </div>
-                          <div className="form-check">
-                            <input
-                              className="form-check-input"
-                              type="radio"
-                              name="schedule"
-                              id="nightSwimming"
-                              value="Night Swimming"
-                              checked={booking.schedule === "Night Swimming"}
-                              onChange={handleChange}
-                              required
-                            />
-                            <label className="form-check-label" htmlFor="nightSwimming">
-                              Night Swimming
-                            </label>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="col-md-6">
+                      <label htmlFor="schedule" className="form-label fw-medium">Schedule</label>
+                      <select
+                        className="form-select"
+                        id="leisureTime"
+                        name="leisureTime"
+                        value={booking.leisureTime}
+                        onChange={handleDayNightChange}
+                      >
+                        <option value="">None</option>
+                        <option value="DAY">Day Swimming</option>
+                        <option value="NIGHT">Night Swimming</option>
+                      </select>
+                    </div>
 
 
                     {/* Room and Table selectors in a single row */}
@@ -1261,8 +1247,12 @@ useEffect(() => {
                         rows="4"
                         className="form-control"
                         placeholder="Write your add ons here..."
+                        value={booking.addOns}
+                        onChange={(e) =>
+                          setBooking({ ...booking, addOns: e.target.value })
+                        }
                         style={{
-                          overflow: "hidden",  // removes scrollbar
+                          overflow: "auto",  // removes scrollbar
                           resize: "none",      // prevents manual resize
                         }}
                       ></textarea>
@@ -1274,10 +1264,10 @@ useEffect(() => {
                         name="summary"
                         rows="4"
                         className="form-control"
-                        value={`Room Type: ${booking.unitType || "None"}\nTable Type: ${booking.tableType || "None"}\nCheck-in: ${booking.checkInDate || "N/A"}\nCheck-out: ${booking.checkOutDate || "N/A"}\nAdults: ${booking.adults || 0}\nKids: ${booking.kids || 0}\nSchedule: "DAY OR NIGHT"`}
+                        value={`Room Type: ${booking.unitType || "None"}\nTable Type: ${booking.tableType || "None"}\nCheck-in: ${booking.checkInDate || "N/A"}\nCheck-out: ${booking.checkOutDate || "N/A"}\nAdults: ${booking.adults || 0}\nKids: ${booking.kids || 0}\nSchedule: "${booking.leisureTime}"`}
                         readOnly
                         style={{
-                          overflow: "hidden",  // removes scrollbar
+                          overflow: "auto",  // removes scrollbar
                           resize: "none",      // prevents manual resize
                         }}
                       ></textarea>

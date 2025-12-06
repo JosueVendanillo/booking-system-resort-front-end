@@ -76,9 +76,6 @@ const [email, setEmail] = useState("");
         }else if(userData.role == "RECEPTIONIST"){
             navigate("/receptionist/dashboard");
         }
-         else if( userData.role == "STAFF"){
-            navigate("/staff/dashboard");
-        }
         else {
           navigate("/");
         }

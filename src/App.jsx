@@ -27,13 +27,22 @@ const router = createBrowserRouter(
         <Route path="/admin/payment" element={<PaymentManagement />} />
         <Route path="/admin/room" element={<RoomInventory/>} />
       </Route>
+{/* 
+      <Route element={<ManagerLayout />}>
+        <Route path="/admin/dashboard" element={<Dashboard />} />
+        <Route path="/admin/book" element={<BookManagement />} />
+        <Route path="/admin/feedback" element={<FeedbackManagement />} />
+        <Route path="/admin/customer" element={<CustomerManagement />} />
+        <Route path="/admin/payment" element={<PaymentManagement />} />
+        <Route path="/admin/room" element={<RoomInventory/>} />
+      </Route> */}
 
       <Route element={<UserLayout />}>
         <Route path="/" element={<Homepage />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminLogin />} />
       </Route>
     </>
   )
