@@ -421,7 +421,7 @@ useEffect(() => {
 
       // Proceed with payment process
       //Show Payment Modal
-      setShowPaymentModal(true);
+      // setShowPaymentModal(true);
 
       alert("Proceeding to Payment")
 
@@ -554,7 +554,7 @@ useEffect(() => {
     };
 
     try {
-      const response = await axios.post("http://localhost:8080/api/feedback", formData);
+      const response = await axios.post("http://localhost:8080/api/feedbacks", formData);
       if (response.status === 200 || response.status === 201) {
         alert("Thank you for your feedback!");
         e.target.reset();

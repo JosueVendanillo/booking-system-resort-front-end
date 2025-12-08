@@ -101,4 +101,4 @@ function ManagerNavbar() {
   );
 }
 
-export default ManegerNavbar;
+export default ManagerNavbar;

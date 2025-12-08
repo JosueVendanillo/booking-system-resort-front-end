@@ -25,4 +25,4 @@ function ManagerLayout() {
   )
 }
 
-export default AdminLayout
+export default ManagerLayout

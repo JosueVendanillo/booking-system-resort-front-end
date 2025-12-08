@@ -12,6 +12,12 @@ function BookManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+
+  const [viewImagesModalOpen, setViewImagesModalOpen] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [viewBookingCode, setViewBookingCode] = useState("");
+
+
   // Load bookings from backend
   useEffect(() => {
     fetch("http://localhost:8080/api/bookings")
@@ -130,6 +136,28 @@ const handleCancel = async (booking) => {
     alert("An error occurred during booking cancellation");
   }
 };
+
+
+const handleView = async (booking) => {
+  setViewBookingCode(booking.bookingCode);
+  setViewImagesModalOpen(true);
+
+  try {
+    // Fetch discount proof images by uploader (fullname)
+    const resp = await axios.get(
+      `http://localhost:8080/api/uploads/discount-proofs/by-uploader/${booking.fullname}`
+    );
+
+    // Set images to modal (fallback empty array)
+    setSelectedImages(resp.data || []);
+  } catch (error) {
+    console.error("Error fetching discount proof images:", error);
+    setSelectedImages([]); // fallback
+  }
+};
+
+
+
   
  
   return (
@@ -262,6 +290,13 @@ const handleCancel = async (booking) => {
                             >
                               <i className="bx bx-trash me-1"></i>Delete
                             </button>
+                            <button
+                              type="button"
+                              className="btn btn-warning me-2"
+                               onClick={() => handleView(b)}
+                            >
+                              View
+                            </button>
 
                             {/* Hide toggle */}
                             <button
@@ -364,6 +399,61 @@ const handleCancel = async (booking) => {
           </div>
         </div>
       </div>
+
+
+        {viewImagesModalOpen && (
+      <div className="modal fade show d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div className="modal-dialog modal-lg modal-dialog-centered">
+          <div className="modal-content">
+
+            <div className="modal-header">
+              <h5 className="modal-title">
+                Discount Proof – {viewBookingCode}
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setViewImagesModalOpen(false)}
+              ></button>
+            </div>
+
+            <div className="modal-body">
+              {selectedImages.length > 0 ? (
+                <div className="row">
+                  {selectedImages.map((img, index) => (
+                    <div className="col-md-4 mb-3" key={index}>
+                      <img
+                        src={`http://localhost:8080/${img.imagePath}`}
+                        alt="Discount Proof"
+                        className="img-fluid rounded border"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="alert alert-info text-center">No attached images</div>
+              )}
+            </div>
+
+
+            <div>
+              <button type="button">Apply Discount</button>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setViewImagesModalOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+  )}
+
 
       {/* Modal */}
       <BookFormModal
