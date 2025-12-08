@@ -13,6 +13,8 @@ import Register from './pages/user/Register';
 import RoomInventory from './pages/admin/RoomManagement';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
 import AdminLogin from './pages/user/AdminLogin';
+import PaymentSuccess from './components/confirmation/PaymentSuccess';
+
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -43,7 +45,9 @@ const router = createBrowserRouter(
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
       </Route>
+      
     </>
   )
 )

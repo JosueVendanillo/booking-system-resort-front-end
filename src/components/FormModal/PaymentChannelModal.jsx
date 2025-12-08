@@ -23,6 +23,45 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
   const [uploadedImages, setUploadedImages] = useState([]);
   const [uploadError, setUploadError] = useState("");
 
+
+  //payment gateway
+  const [clientKey, setClientKey] = useState()
+
+  const PAYMONGO_KEY = "pk_test_UYnTzoX9VzXoRoj5n9uCJ2Rm"; //LIVE
+  // "pk_test_UYnTzoX9VzXoRoj5n9uCJ2Rm"; TEST
+
+
+  {/* // Add state for phone */ }
+  // const [gcashPhone, setGcashPhone] = useState("");
+  // const [gcashError, setGcashError] = useState("");
+
+
+  // const validateGcashNumber = (phone) => {
+  //   const regex = /^(09|\+639)\d{9}$/;
+  //   if (!phone) return "GCash number is required";
+  //   if (!regex.test(phone)) return "Invalid GCash number (09xxxxxxxxx or +639xxxxxxxxx)";
+  //   return "";
+  // };
+
+
+  // const handleGcashChange = (e) => {
+  //   let value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+
+  //   // Auto-add +63 if the user starts with 9
+  //   if (value.startsWith("9")) {
+  //     value = "+63" + value;
+  //   }
+
+  //   // Limit to 13 characters (+639XXXXXXXXX)
+  //   if (value.length > 13) value = value.slice(0, 13);
+
+  //   setGcashPhone(value);
+  //   setGcashError(validateGcashNumber(value));
+  // };
+
+
+
+
   useEffect(() => {
     const loadFees = async () => {
       try {
@@ -43,20 +82,100 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
 
   const payload = JSON.parse(localStorage.getItem("pendingBooking"));
 
-  const handleConfirm = async () => {
-    try {
-      const response = await axios.post("http://localhost:8080/api/bookings", payload);
-      alert("Booking Successful");
-      
-      setBookingIdForDiscount(response.data.id)
+  // const handleConfirm = async () => {
+  //   try {
+  //     const response = await axios.post("http://localhost:8080/api/bookings", payload);
+  //     alert("Booking Successful");
 
-      onPaymentDone();
-      // window.location.reload();
-    } catch (err) {
-      console.error("Error saving booking:", err);
-      alert("Payment failed, please try again.");
+  //     setBookingIdForDiscount(response.data.id)
+
+  //     onPaymentDone();
+  //     // window.location.reload();
+  //   } catch (err) {
+  //     console.error("Error saving booking:", err);
+  //     alert("Payment failed, please try again.");
+  //   }
+
+
+  // };
+
+
+
+
+  // ===== FOR PAYMENT GATEWAY ======
+
+
+  useEffect(() => {
+  const verifyPayment = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const intentId = urlParams.get("payment_intent_client_key"); // PayMongo sends clientKey in URL
+    if (intentId) {
+      try {
+        const res = await axios.get(`http://localhost:8080/api/paymongo/intent/${intentId}`);
+        const status = res.data.data.attributes.status;
+        if (status === "succeeded") {
+          alert("Payment Successful!");
+        } else {
+          alert("Payment Pending or Failed");
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
+  verifyPayment();
+}, []);
+
+
+
+const loadPayMongoSDK = () => {
+  return new Promise((resolve, reject) => {
+    if (window.PayMongo) return resolve(window.PayMongo);
+
+    const script = document.createElement("script");
+    script.src = "https://js.paymongo.com/v1/paymongo.js";
+    script.onload = () => resolve(window.PayMongo);
+    script.onerror = () => reject(new Error("Failed to load PayMongo SDK"));
+    document.body.appendChild(script);
+  });
+};
+
+const handleConfirm = async () => {
+  try {
+    // 1️⃣ Save booking
+    const bookingRes = await axios.post("http://localhost:8080/api/bookings", payload);
+    const bookingId = bookingRes.data.id;
+    setBookingIdForDiscount(bookingId);
+    alert("Booking saved!");
+
+    // 2️⃣ Create PayMongo Payment Intent
+    const amountInCentavos = totalAmount * 100; // convert PHP to centavos
+    const intentRes = await axios.post("http://localhost:8080/api/paymongo/intent/maya", {
+      amount: amountInCentavos,
+      returnUrl: "http://localhost:4173/payment-success"
+    });
+
+    const clientKey = intentRes.data.clientKey;
+    if (!clientKey) throw new Error("Missing clientKey");
+
+    // 3️⃣ Redirect to hosted checkout
+    window.location.href = `https://checkout.paymongo.com/?client_key=${clientKey}`;
+
+  } catch (err) {
+    console.error("Payment Error:", err);
+    alert("Unable to initiate payment. Please try again.");
+  }
+};
+
+
+
+
+
+
+
+
+
+
 
   // ====== DISCOUNT TYPE CHANGE ======
   const handleChange = (e) => {
@@ -122,7 +241,7 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
 
     const formData = new FormData();
 
-          // attach bookingId
+    // attach bookingId
     formData.append("bookingId", bookingIdForDiscount);
     formData.append("discountType", booking.discountType);
     formData.append("uploadedBy", payload.fullname); // or dynamic
@@ -240,6 +359,10 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
               </div>
             )}
 
+    
+
+
+
             {/* PAYMENT REFERENCE */}
             <div className="list-group mt-4">
               <div className="list-group-item">
@@ -255,6 +378,30 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
               </div>
             </div>
 
+
+
+
+            {/* // Add input in the modal body (above Confirm Payment button) */}
+            {/* <div className="mb-3">
+              <label className="fw-medium">GCash Phone Number</label>
+              <input
+                type="text"
+                className={`form-control ${gcashError ? "is-invalid" : ""}`}
+                placeholder="Enter your GCash phone number"
+                value={gcashPhone}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setGcashPhone(value);
+                  setGcashError(validateGcashNumber(value));
+                  handleGcashChange(e)
+                }}
+              />
+              {gcashError && <div className="invalid-feedback">{gcashError}</div>}
+
+            </div> */}
+
+
+
           </div>
 
           <div className="modal-footer">
@@ -262,7 +409,12 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
             <button
               className="btn btn-primary rounded-pill"
               onClick={handleConfirm}
-              disabled={referenceNumber.trim().length === 0}
+              disabled={referenceNumber.trim().length === 0
+
+                // ||
+                // gcashError !== ""  // disable if invalid
+
+              }
             >
               Confirm Payment
             </button>
