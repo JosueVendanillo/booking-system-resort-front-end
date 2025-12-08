@@ -22,7 +22,7 @@ function ManagerSidebar() {
                 <li className="menu-header small text-uppercase"><span className="menu-header-text">Main</span></li>
 
                 <NavLink
-                    to="/admin/dashboard"
+                    to="/manager/dashboard"
                     className={({ isActive }) =>
                         `menu-item ${isActive ? 'active' : ''}`
                     }
@@ -39,7 +39,7 @@ function ManagerSidebar() {
 
 
                 <NavLink
-                    to="/admin/feedback"
+                    to="/manager/feedback"
                     className={({ isActive }) =>
                         `menu-item ${isActive ? 'active' : ''}`
                     }
@@ -51,7 +51,7 @@ function ManagerSidebar() {
                 </NavLink>
 
                 <NavLink
-                    to="/admin/book"
+                    to="/manager/book"
                     className={({ isActive }) =>
                         `menu-item ${isActive ? 'active' : ''}`
                     }
@@ -63,7 +63,7 @@ function ManagerSidebar() {
                 </NavLink>
 
                 <NavLink
-                    to="/admin/customer"
+                    to="/manager/customer"
                     className={({ isActive }) =>
                         `menu-item ${isActive ? 'active' : ''}`
                     }
@@ -75,7 +75,7 @@ function ManagerSidebar() {
                 </NavLink>
 
                 <NavLink
-                    to="/admin/payment"
+                    to="/manager/payment"
                     className={({ isActive }) =>
                         `menu-item ${isActive ? 'active' : ''}`
                     }
@@ -86,7 +86,7 @@ function ManagerSidebar() {
                     </div>
                 </NavLink>
                 <NavLink
-                    to="/admin/room"
+                    to="/manager/room"
                     className={({ isActive }) =>
                         `menu-item ${isActive ? 'active' : ''}`
                     }
@@ -101,4 +101,4 @@ function ManagerSidebar() {
     )
 }
 
-export default AdminSidebar
+export default ManagerSidebar

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { getUser, getUserRole, clearUser } from '../../utils/auth';
+import { getUser, getUserRole, clearUser } from '../../../utils/auth';
 
 function ReceptionistNavbar() {
   const [user, setUser] = useState(null);
@@ -27,7 +27,7 @@ function ReceptionistNavbar() {
 
   const location = useLocation();
   const titleMap = {
-    '/Manger': 'Dashboard',
+    '/Manager': 'Dashboard',
     '/Manager/amenity': 'Amenities Management',
     '/Manager/book': 'Booking Management',
     '/Manager/payment': 'Payment Management',

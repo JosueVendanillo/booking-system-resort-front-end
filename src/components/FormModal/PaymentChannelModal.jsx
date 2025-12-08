@@ -1,52 +1,35 @@
 import React, { useEffect, useState } from "react";
-import gcashQR from "../../assets/images/gcash-qr.jpg";
-import bpibankQR from "../../assets/images/bpi-bank-qr.jpg";
 import axios from 'axios';
 
 function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalAmount, downpayment, adults, kids }) {
-  if (!show) return null; // Don't render unless modal is open
-
-
+  if (!show) return null;
 
   const [adultPrice, setAdultPrice] = useState(0);
   const [kidPrice, setKidPrice] = useState(0);
-
   const [peopleCost, setPeopleCost] = useState(0);
   const [adultCount, setAdultCount] = useState(0);
   const [kidsCount, setKidsCount] = useState(0);
   const [referenceNumber, setReferenceNumber] = useState("");
+  const [bookingIdForDiscount, setBookingIdForDiscount] = useState(null)
+
   const [booking, setBooking] = useState({
-    discountType: "",
-    discountProofs: []
+    discountType: ""
   });
+
+  const DISCOUNT_TYPES = ["Senior Citizen", "PWD", "Birthday Promo"];
+
+
+  // Multiple uploads state
   const [uploadedImages, setUploadedImages] = useState([]);
+  const [uploadError, setUploadError] = useState("");
 
-  // Handle multiple image uploads
-  const handleMultipleImages = (e) => {
-    const files = Array.from(e.target.files);
-    const imagesArray = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setUploadedImages((prevImages) => [...prevImages, ...imagesArray]);
-  }
-
-  console.log("Booking Code in Modal:", bookingCode);
-  console.log("Adults in Modal:", adults);
-  console.log("Kids in Modal:", kids);
-  console.log("Total Amount in Modal:", totalAmount);
-  console.log("Downpayment in Modal:", downpayment);
-  console.log("-----");
-
-
- useEffect(() => {
-    const response = async () => {
+  useEffect(() => {
+    const loadFees = async () => {
       try {
         const res = await axios.get('http://localhost:8080/api/prices/entrance-fee');
-      console.log("Entrance Fee Adult Data:", res.data.adultPrice);
-      console.log("Entrance Fee Kid Data:", res.data.kidPrice);
         setAdultPrice(res.data.adultPrice);
         setKidPrice(res.data.kidsPrice);
+
         setAdultCount(adults * res.data.adultPrice);
         setKidsCount(kids * res.data.kidsPrice || 0);
         setPeopleCost((adults * res.data.adultPrice) + (kids * res.data.kidsPrice) || 0);
@@ -54,89 +37,127 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
       } catch (err) {
         console.error("Error fetching entrance fees:", err);
       }
-  }
-    response();
-  }
-, [adults, kids]);
-
-
+    };
+    loadFees();
+  }, [adults, kids]);
 
   const payload = JSON.parse(localStorage.getItem("pendingBooking"));
 
-  console.log("Payload before adding reference number:", payload);
-
-
   const handleConfirm = async () => {
-
-
-
-       // Once the payment is completed, it will save to the backend
+    try {
+      const response = await axios.post("http://localhost:8080/api/bookings", payload);
+      alert("Booking Successful");
       
-  
+      setBookingIdForDiscount(response.data.id)
 
-        const response = await axios.post(
-          "http://localhost:8080/api/bookings",
-          payload
-        ); 
-
-        alert("Booking Successful")
-   
-        onPaymentDone();
-        window.location.reload(); // reload to reflect changes
-
-      
-
-    // // require reference number
-    // if (!referenceNumber || !referenceNumber.trim()) {
-    //   alert("Please enter a reference number before confirming the payment.");
-    //   return;
-    // }
-
-    
-    // saved to payment management
-    // try {
-    //   const payload = {
-    //     bookingCode: bookingCode,
-    //     amount: downpayment,
-    //     paymentMethod: selectedMethod,
-    //     referenceNumber: referenceNumber,
-    //     paymentDate: new Date().toISOString()
-    //   };
-
-    //   const response = await axios.post("http://localhost:8080/api/payments/payment-home-user", payload);
-
-    //   console.log("Payment saved:", response.data);
-    //   onPaymentDone(); // callback to Homepage
-    //   window.location.reload(); // reload to reflect changes
-    // } catch (err) {
-    //   console.error("Payment failed:", err);
-    //   alert("Error occured, Please check the room if still not full. Thank you.");
-    // }
+      onPaymentDone();
+      // window.location.reload();
+    } catch (err) {
+      console.error("Error saving booking:", err);
+      alert("Payment failed, please try again.");
+    }
   };
 
-
+  // ====== DISCOUNT TYPE CHANGE ======
   const handleChange = (e) => {
-    const { name, value } = e.target;
     setBooking((prev) => ({
       ...prev,
-      [name]: value,
+      [e.target.name]: e.target.value
     }));
-  }
+  };
+
+  // ====== VALIDATION FOR MULTIPLE FILES ======
+  const validateFiles = (files) => {
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+    const maxSize = 5 * 1024 * 1024;
+    const maxFiles = 5;
+
+    if (files.length + uploadedImages.length > maxFiles) {
+      return "Maximum of 5 images allowed.";
+    }
+    for (let file of files) {
+      if (!allowedTypes.includes(file.type)) {
+        return "Only JPG, JPEG and PNG files are allowed.";
+      }
+      if (file.size > maxSize) {
+        return "Each file must be under 5MB.";
+      }
+    }
+    return null;
+  };
+
+  // ====== HANDLE MULTIPLE IMAGE UPLOAD ======
+  const handleMultipleImages = (e) => {
+    const files = Array.from(e.target.files);
+    const error = validateFiles(files);
+
+    if (error) {
+      setUploadError(error);
+      return;
+    }
+
+    setUploadError("");
+
+    const mapped = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    setUploadedImages((prev) => [...prev, ...mapped]);
+  };
+
+  // ====== DELETE IMAGE ======
+  const handleDeleteImage = (index) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // ====== UPLOAD FILES TO BACKEND ======
+  const handleUpload = async () => {
+    if (uploadedImages.length === 0) {
+      setUploadError("Please attach at least one proof image.");
+      return;
+    }
+
+    console.log("bookingID for discount value: " + bookingIdForDiscount)
+
+    const formData = new FormData();
+
+          // attach bookingId
+    formData.append("bookingId", bookingIdForDiscount);
+    formData.append("discountType", booking.discountType);
+    formData.append("uploadedBy", payload.fullname); // or dynamic
+    uploadedImages.forEach((img) => {
+      formData.append("files", img.file);
+    });
 
 
-  
+    try {
+      const res = await axios.post(
+        "http://localhost:8080/api/uploads/discount-proofs",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
+      alert("Files uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      setUploadError("Failed to upload. Please try again.");
+    }
+  };
 
   return (
     <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
       <div className="modal-dialog modal-lg modal-dialog-centered">
         <div className="modal-content rounded-4 shadow-lg">
+
           <div className="modal-header">
             <h5 className="modal-title">Choose Your Payment Method</h5>
             <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
+
           <div className="modal-body">
-            {/* Booking Summary */}
+
+            {/* SUMMARY */}
             <div className="alert alert-info text-center mb-4">
               <h6>Your Booking Code: <strong>{bookingCode}</strong></h6>
               <h6><strong>Total Adult Price:</strong> ₱{adultCount}</h6>
@@ -146,174 +167,107 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
               <p className="mb-0">Minimum Downpayment (30%): <strong>₱{downpayment.toLocaleString()}</strong></p>
             </div>
 
-
-            
-            {/*
-            ---------------------------------------
-            For Discount Proof Upload
-            ---------------------------------------
-            Type of Discount:
-            - PWD
-            - Senior Citizen
-            - Birthday Promo
-            ---------------------------------------
-              
-            */}
-            <div className="col-md-6">
+            {/* DISCOUNT TYPE */}
+            <div className="col-md-6 mb-3">
               <label className="fw-medium d-block mb-2">Type of Discount</label>
 
               <div className="d-flex gap-4">
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="discountType"
-                    id="senior"
-                    value="Senior Citizen"
-                    checked={booking.discountType === "Senior Citizen"}
-                    onChange={handleChange}
-                  />
-                  <label className="form-check-label" htmlFor="senior">
-                    Senior Citizen
-                  </label>
-                </div>
-
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="discountType"
-                    id="pwd"
-                    value="PWD"
-                    checked={booking.discountType === "PWD"}
-                    onChange={handleChange}
-                  />
-                  <label className="form-check-label" htmlFor="pwd">
-                    PWD
-                  </label>
-                </div>
-
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="discountType"
-                    id="birthday"
-                    value="Birthday Promo"
-                    checked={booking.discountType === "Birthday Promo"}
-                    onChange={handleChange}
-                  />
-                  <label className="form-check-label" htmlFor="birthday">
-                    Birthday Promo
-                  </label>
-                </div>
+                {DISCOUNT_TYPES.map((type) => (
+                  <div className="form-check" key={type}>
+                    <input
+                      className="form-check-input"
+                      type="radio"
+                      name="discountType"
+                      value={type}
+                      checked={booking.discountType === type}
+                      onChange={handleChange}
+                    />
+                    <label className="form-check-label">{type}</label>
+                  </div>
+                ))}
               </div>
             </div>
 
+            {/* SHOW UPLOAD WHEN DISCOUNT SELECTED */}
+            {booking.discountType && (
+              <div className="col-md-6">
+                <label className="form-label fw-medium">Upload your Proof of Discount</label>
 
+                <input
+                  type="file"
+                  className="form-control mb-2"
+                  accept="image/*"
+                  multiple
+                  onChange={handleMultipleImages}
+                />
 
-            {/* SHOW ONLY IF SENIOR OR PWD */}
-            {(booking.discountType === "Senior Citizen" ||
-              booking.discountType === "Birthday Promo" ||
-              booking.discountType === "PWD") && (
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Upload your Proof of Discount Here</label>
+                {uploadError && <p className="text-danger small">{uploadError}</p>}
 
-                  <div className="custom-file">
-                    <input
-                      type="file"
-                      className="custom-file-input"
-                      id="customFile"
-                      name="images[]"
-                      accept="image/*"
-                      multiple
-                      onChange={handleMultipleImages}
-                    />
-                  </div>
+                {/* PREVIEW IMAGES */}
+                <div className="d-flex gap-2 flex-wrap mt-2">
+                  {uploadedImages.map((img, idx) => (
+                    <div
+                      key={idx}
+                      className="position-relative"
+                      style={{ width: "120px", height: "120px" }}
+                    >
+                      <img
+                        src={img.preview}
+                        alt="preview"
+                        className="img-thumbnail"
+                        style={{ width: "120px", height: "120px", objectFit: "cover" }}
+                      />
 
-
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteImage(idx)}
+                        className="btn btn-danger btn-sm position-absolute top-0 end-0"
+                        style={{
+                          transform: "translate(30%, -30%)",
+                          padding: "2px 6px",
+                          borderRadius: "50%",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              )}
-            <div className="mt-3 d-flex flex-wrap gap-3">
-              {uploadedImages.map((img, index) => (
-                <div
-                  key={index}
-                  className="position-relative"
-                  style={{ width: "120px", height: "120px" }}
-                >
-                  {/* Thumbnail */}
-                  <img
-                    src={img.preview}
-                    alt="preview"
-                    className="img-thumbnail"
-                    style={{
-                      width: "120px",
-                      height: "120px",
-                      objectFit: "cover",
-                    }}
-                  />
 
-                  {/* Delete Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteImage(index)}
-                    className="btn btn-danger btn-sm position-absolute top-0 end-0"
-                    style={{
-                      transform: "translate(30%, -30%)",
-                      padding: "2px 6px",
-                      borderRadius: "50%",
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
+                <button className="btn btn-primary mt-3" onClick={handleUpload}>
+                  UPLOAD
+                </button>
+              </div>
+            )}
 
-
-
-
-            <div>
-              PAYMENT GATEWAY HERE......
-
-
-              Once done with the payment via paymongo, enter the reference number below and click confirm payment.
-            </div>
-
-
-
-            
-            <div className="list-group">
+            {/* PAYMENT REFERENCE */}
+            <div className="list-group mt-4">
               <div className="list-group-item">
                 <h5>Enter Reference No.</h5>
                 <input
                   type="text"
-                  name="referenceNumber"
                   placeholder="Enter Reference No."
                   className="form-control mt-2"
-                  value={referenceNumber} // ✅ controlled input
-                  onChange={(e) => setReferenceNumber(e.target.value)} // ✅ update state
-
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
                 />
-                <p>Please enter reference number of your online transactions.</p>
+                <p>Please enter the reference number of your online transaction.</p>
               </div>
             </div>
+
           </div>
 
-
           <div className="modal-footer">
-            <button className="btn btn-secondary rounded-pill" onClick={onClose}>
-              Cancel
-            </button>
+            <button className="btn btn-secondary rounded-pill" onClick={onClose}>Cancel</button>
             <button
               className="btn btn-primary rounded-pill"
               onClick={handleConfirm}
               disabled={referenceNumber.trim().length === 0}
-
             >
               Confirm Payment
             </button>
           </div>
+
         </div>
       </div>
     </div>

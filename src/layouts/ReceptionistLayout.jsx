@@ -25,4 +25,4 @@ function ReceptionistLayout() {
   )
 }
 
-export default AdminLayout
+export default ReceptionistLayout
