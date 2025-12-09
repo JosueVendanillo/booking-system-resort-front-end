@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
+import gcashQR from "../../assets/images/gcash-qr.jpg";
+import bpibankQR from "../../assets/images/bpi-bank-qr.jpg";
 
 function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalAmount, downpayment, adults, kids }) {
   if (!show) return null;
@@ -11,7 +13,8 @@ function PaymentChannelModal({ show, onClose, onPaymentDone, bookingCode, totalA
   const [kidsCount, setKidsCount] = useState(0);
   const [referenceNumber, setReferenceNumber] = useState("");
   const [bookingIdForDiscount, setBookingIdForDiscount] = useState(null)
-
+  const [selectedMethod, setSelectedMethod] = useState(""); // track selected method
+  const [bookingCodeForPayment, setBookingCodeForPayment] = useState("")
   const [booking, setBooking] = useState({
     discountType: ""
   });
@@ -140,34 +143,88 @@ const loadPayMongoSDK = () => {
   });
 };
 
-const handleConfirm = async () => {
-  try {
-    // 1️⃣ Save booking
-    const bookingRes = await axios.post("http://localhost:8080/api/bookings", payload);
-    const bookingId = bookingRes.data.id;
-    setBookingIdForDiscount(bookingId);
-    alert("Booking saved!");
+// const handleConfirm = async () => {
+//   try {
+//     // 1️⃣ Save booking
+//     const bookingRes = await axios.post("http://localhost:8080/api/bookings", payload);
+//     const bookingId = bookingRes.data.id;
+//     setBookingIdForDiscount(bookingId);
+//     alert("Booking saved!");
 
-    // 2️⃣ Create PayMongo Payment Intent
-    const amountInCentavos = totalAmount * 100; // convert PHP to centavos
-    const intentRes = await axios.post("http://localhost:8080/api/paymongo/intent/maya", {
-      amount: amountInCentavos,
-      returnUrl: "http://localhost:4173/payment-success"
-    });
+//     // 2️⃣ Create PayMongo Payment Intent
+//     const amountInCentavos = totalAmount * 100; // convert PHP to centavos
+//     const intentRes = await axios.post("http://localhost:8080/api/paymongo/intent/maya", {
+//       amount: amountInCentavos,
+//       returnUrl: "http://localhost:4173/payment-success"
+//     });
 
-    const clientKey = intentRes.data.clientKey;
-    if (!clientKey) throw new Error("Missing clientKey");
+//     const clientKey = intentRes.data.clientKey;
+//     if (!clientKey) throw new Error("Missing clientKey");
 
-    // 3️⃣ Redirect to hosted checkout
-    window.location.href = `https://checkout.paymongo.com/?client_key=${clientKey}`;
+//     // 3️⃣ Redirect to hosted checkout
+//     window.location.href = `https://checkout.paymongo.com/?client_key=${clientKey}`;
 
-  } catch (err) {
-    console.error("Payment Error:", err);
-    alert("Unable to initiate payment. Please try again.");
+//   } catch (err) {
+//     console.error("Payment Error:", err);
+//     alert("Unable to initiate payment. Please try again.");
+//   }
+// };
+
+
+
+
+ const handleConfirm = async () => {
+
+    // require reference number
+  if (!referenceNumber || !referenceNumber.trim()) {
+    alert("Please enter a reference number before confirming the payment.");
+    return;
   }
-};
+
+  try {
+    // 1️⃣ SAVE BOOKING
+    const responseBooking = await axios.post("http://localhost:8080/api/bookings", payload);
+    const savedBookingId = responseBooking.data.id;
+    const savedBookingCode = responseBooking.data.bookingCode;
+
+    
 
 
+
+
+    alert("Booking Successful");
+    setBookingIdForDiscount(savedBookingId);
+    setBookingCodeForPayment(savedBookingCode);
+
+
+        console.log("BOOKING ID: " + savedBookingId)
+    console.log("BOOKING CODE: " + savedBookingCode)
+
+    const payloadPayment = {
+      bookingCode: savedBookingCode,
+      amount: downpayment,
+      paymentMethod: selectedMethod,
+      referenceNumber: referenceNumber,
+      paymentDate: new Date().toISOString()
+    };
+
+
+    // // 2️⃣ SAVE PAYMENT
+    const responsePayment = await axios.post(
+      "http://localhost:8080/api/payments/payment-home-user",
+      payloadPayment
+    );
+
+    console.log("Payment saved:", responsePayment.data);
+
+    // 3️⃣ CALLBACK
+    onPaymentDone();
+      window.location.reload();
+    } catch (err) {
+      console.error("Error saving booking:", err);
+      alert("Payment failed, please try again.");
+    }
+  };
 
 
 
@@ -287,7 +344,7 @@ const handleConfirm = async () => {
             </div>
 
             {/* DISCOUNT TYPE */}
-            <div className="col-md-6 mb-3">
+            {/* <div className="col-md-6 mb-3">
               <label className="fw-medium d-block mb-2">Type of Discount</label>
 
               <div className="d-flex gap-4">
@@ -305,10 +362,10 @@ const handleConfirm = async () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* SHOW UPLOAD WHEN DISCOUNT SELECTED */}
-            {booking.discountType && (
+            {/* {booking.discountType && (
               <div className="col-md-6">
                 <label className="form-label fw-medium">Upload your Proof of Discount</label>
 
@@ -320,10 +377,10 @@ const handleConfirm = async () => {
                   onChange={handleMultipleImages}
                 />
 
-                {uploadError && <p className="text-danger small">{uploadError}</p>}
+                {uploadError && <p className="text-danger small">{uploadError}</p>} */}
 
                 {/* PREVIEW IMAGES */}
-                <div className="d-flex gap-2 flex-wrap mt-2">
+                {/* <div className="d-flex gap-2 flex-wrap mt-2">
                   {uploadedImages.map((img, idx) => (
                     <div
                       key={idx}
@@ -357,11 +414,54 @@ const handleConfirm = async () => {
                   UPLOAD
                 </button>
               </div>
-            )}
+            )} */}
 
-    
+            <div className="list-group">
+              <div className="list-group-item">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="GCash"
+                  checked={selectedMethod === "GCash"}
+                  onChange={(e) => setSelectedMethod(e.target.value)}
+                  className="form-check-input me-2"
+                />
+                <h5>GCash</h5>
+                <p>Send payment to: <strong>0917-123-4567</strong></p>
+                <img 
+                  src={gcashQR} 
+                  alt="GCash QR Code" 
+                  style={{ width: "150px", marginTop: "10px" }} 
+                />
+              </div>
+              <div className="list-group-item">
+                 <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="Bank Transfer"
+                  checked={selectedMethod === "Bank"}
+                  onChange={(e) => setSelectedMethod(e.target.value)}
+                  className="form-check-input me-2"
+                />
+                <h5>Bank Transfer</h5>
+                <p>
+                  Bank: BPI <br />
+                  Account Number: <strong>1234-5678-90</strong> <br />
+                  Account Name: Blue Belle Hotel
+                </p>
+                <img 
+                  src={bpibankQR} 
+                  alt="BPI Bank QR Code" 
+                  style={{ width: "150px", marginTop: "10px" }} 
+                />
+              </div>
+              <div className="list-group-item">
+                <h5>Pay at Counter</h5>
+                <p>You can pay directly when you arrive at the resort.</p>
+              </div>
+            </div>
 
-
+          
 
             {/* PAYMENT REFERENCE */}
             <div className="list-group mt-4">
