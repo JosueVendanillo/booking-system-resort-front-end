@@ -138,9 +138,15 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
     console.log(" handlePayRemaining called with:", { bookingId, paymentMethod, remainingBalance, referenceNumber })
 
     if (!paymentMethod) {
-      alert("Please select a payment method to complete remaining payment.")
-      return
+      alert("Please select a payment method.");
+      return;
     }
+
+    if (paymentMethod !== "Cash" && (!referenceNumber || referenceNumber.trim() === "")) {
+      alert("Reference number is required for non-cash payments.");
+      return;
+    }
+
 
     try {
       const payload = {
@@ -151,9 +157,9 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
       console.log(" Completing payment payload:", payload)
 
       const res = await axios.post(
-      `http://localhost:8080/api/payments/complete/${bookingId}?paymentMethod=${paymentMethod}&referenceNumber=${payload.referenceNumber}`,
-      payload
-    );
+        `http://localhost:8080/api/payments/complete/${bookingId}?paymentMethod=${paymentMethod}&referenceNumber=${payload.referenceNumber}`,
+        payload
+      );
       console.log("  Complete payment response:", res.data)
 
       setRemainingBalance(res.data.remainingBalance || 0)
@@ -248,7 +254,7 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
                 </div>
               )}
 
-             {/* Reference Number */}
+              {/* Reference Number */}
               {/* {editingPayment && ( */}
               <div className="mb-3">
                 <label className="form-label">Reference Number</label>
@@ -278,7 +284,7 @@ function PaymentFormModal({ fetchPayments, editingPayment, setEditingPayment }) 
               <button type="button" onClick={handleSave} className="btn btn-primary ms-2">Save Payment</button>
             )}
 
-            {editingPayment && remainingBalance > 0 &&(
+            {editingPayment && remainingBalance > 0 && (
               <button type="button" onClick={handlePayRemaining} className="btn btn-success ms-2">Pay Remaining</button>
             )}
           </div>

@@ -309,23 +309,23 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
     }
 
     // checkInTime typed for rooms: enforce >= 14:00
-    if (name === "checkInTime") {
-      if (isRoomType(formData.unitType) && value < "14:00") {
-        alert("Room check-in cannot be earlier than 14:00 (2:00 PM).");
-        return;
-      }
-      // set and recalc checkout for rooms
-      setFormData(prev => {
-        const next = { ...prev, checkInTime: value };
-        if (isRoomType(next.unitType)) {
-          const out = getCheckoutFrom(next.checkInDate, value);
-          next.checkOutDate = out.date;
-          next.checkOutTime = out.time;
-        }
-        return next;
-      });
-      return;
-    }
+    // if (name === "checkInTime") {
+    //   if (isRoomType(formData.unitType) && value < "14:00") {
+    //     alert("Room check-in cannot be earlier than 14:00 (2:00 PM).");
+    //     return;
+    //   }
+    //   // set and recalc checkout for rooms
+    //   setFormData(prev => {
+    //     const next = { ...prev, checkInTime: value };
+    //     if (isRoomType(next.unitType)) {
+    //       const out = getCheckoutFrom(next.checkInDate, value);
+    //       next.checkOutDate = out.date;
+    //       next.checkOutTime = out.time;
+    //     }
+    //     return next;
+    //   });
+    //   return;
+    // }
 
     // check-in date typed via non-picker path (shouldn't be used when DatePicker used) - keep safe
     if (name === "checkInDate") {
@@ -641,9 +641,9 @@ function BookFormModal({ setBookings, bookings, editingBooking, setEditingBookin
               </div>
 
               <div>
-                //Check discount attachment here based on the fullname
+                {/* //Check discount attachment here based on the fullname
                 //Check if there is an attached image,
-                // apply the discount , all discounts are 20%, if senior citizen - 20% to a single adult , if Birthday promo & PWD for either adult or kid
+                // apply the discount , all discounts are 20%, if senior citizen - 20% to a single adult , if Birthday promo & PWD for either adult or kid */}
               </div>
 
               {/* Add-ons */}
